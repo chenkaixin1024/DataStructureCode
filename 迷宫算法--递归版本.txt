@@ -1,0 +1,270 @@
+#include <iostream>
+using namespace std;
+
+struct Pos
+{
+	Pos(int Row,int Col)
+		:_Row(Row)
+		,_Col(Col)
+	{}
+
+	int _Row;
+	int _Col;
+};
+
+
+class Map
+{
+public:
+	Map(int Row,int Col)
+		:_Row(Row)
+		,_Col(Col)
+		,_pMap(0)
+	{
+		_pMap=new int*[Row];
+		for(int i=0;i<Col;i++)
+		{
+			_pMap[i]=new int[Col];
+		}
+	}
+
+
+	void InitMap(FILE*& fp);
+	bool IsPass(Pos s);
+	bool PassMap(Pos s);
+	void PrintMap();
+
+
+	~Map()
+	{
+		if(_pMap)
+		{
+			for(int i=0;i<_Col;i++)
+			{
+				delete[] _pMap[i];
+				_pMap[i]=NULL;
+			}
+			delete[] _pMap;
+			_pMap=NULL;
+		}
+	}
+
+	int _Row;
+	int _Col;
+	int** _pMap;
+};
+
+
+
+void Map::InitMap(FILE*& fp)
+{
+
+	if(NULL==fp)
+		return ;
+	size_t count=0;
+	char str0;
+	while((str0=fgetc(fp))!='M');
+
+
+	for(int i=0;i<_Row;i++)
+	{
+		for(int j=0;j<_Col;j++)
+		{
+			char str=fgetc(fp);
+			if(str=='\n')
+				str=fgetc(fp);
+			_pMap[i][j]=str-'0';
+		}
+	}
+
+
+
+}
+
+
+
+
+bool Map::IsPass(Pos s)
+{
+	if(s._Row>=_Row||s._Row<0||s._Col>=_Col||s._Col<0)
+		return false;
+	
+	if(_pMap[s._Row][s._Col]==1)
+		return true;
+	return false;
+}
+
+bool Map::PassMap(Pos s)
+{
+	if(s._Row<0||s._Row>_Row||s._Col<0||s._Col>_Col)
+		return true;
+
+	if(IsPass(s))
+	{
+		_pMap[s._Row][s._Col]=2;
+		Pos front(s._Row-1,s._Col);
+		Pos left(s._Row,s._Col-1);
+		Pos right(s._Row,s._Col+1);
+		Pos back(s._Row+1,s._Col);
+
+		if(PassMap(front))
+			return true;
+		if(PassMap(left))
+			return true;
+		if(PassMap(right))
+			return true;
+		if(PassMap(back))
+			return true;
+
+		_pMap[s._Row][s._Col]=3;
+
+	}
+
+	return false;
+}
+
+void Map::PrintMap()
+{
+	for(int i=0;i<_Row;i++)
+	{
+		for(int j=0;j<_Col;j++)
+		{
+			cout<<_pMap[i][j]<<" ";
+		}
+		cout<<endl;
+	}
+	cout<<endl;
+}
+
+int ReadLevel(FILE*& fp)
+{
+
+	char str;
+	size_t num=0;
+	while((str=fgetc(fp))!='L');
+
+	while((str=fgetc(fp))!='\n')
+	{
+		num=(str-'0')+num*10;
+	}
+
+	cout<<"the "<<num<<endl;
+
+
+	return num;
+}
+
+int ReadRow(FILE*& fp)
+{
+
+	char str;
+	while((str=fgetc(fp)!='R'));
+
+	int num=0;
+	while((str=fgetc(fp))!='\n')
+	{
+		num=(str-'0')+num*10;
+	}
+	return num;
+
+}
+
+int ReadCol(FILE*& fp)
+{
+
+	char str;
+	while((str=fgetc(fp)!='C'));
+
+	int num=0;
+	while((str=fgetc(fp))!='\n')
+	{
+		num=(str-'0')+num*10;
+	}
+	return num;
+
+}
+
+int ReadPosX(FILE*& fp)
+{
+
+	char str;
+	while((str=fgetc(fp)!='X'));
+
+	int num=0;
+	while((str=fgetc(fp))!='\n')
+	{
+		num=(str-'0')+num*10;
+	}
+	return num;
+
+
+}
+
+int ReadPosY(FILE*& fp)
+{
+	char str;
+	while((str=fgetc(fp)!='Y'));
+
+	int num=0;
+	while((str=fgetc(fp))!='\n')
+	{
+		num=(str-'0')+num*10;
+	}
+	return num;
+
+}
+
+void funtest()
+{
+	FILE* fp=fopen("Map.txt","r");
+	if(fp==NULL)
+		return ;
+
+	ReadLevel(fp);
+	int Row=ReadRow(fp);
+	int Col=ReadCol(fp);
+	Map map(Row,Col);
+
+	int X=ReadPosX(fp);
+	int Y=ReadPosY(fp);
+	Pos s(X,Y);
+
+	map.InitMap(fp);
+	map.PrintMap();
+
+	if(map.PassMap(s))
+	{
+		map.PrintMap();
+	}
+	else
+	{
+		map.PrintMap();
+		cout<<"迷宫只能从原入口出"<<endl;
+	}
+
+
+	ReadLevel(fp);
+	Row=ReadRow(fp);
+	Col=ReadCol(fp);
+	Map map1(Row,Col);
+
+	X=ReadPosX(fp);
+	Y=ReadPosY(fp);
+	Pos s1(X,Y);
+
+	map1.InitMap(fp);
+	map1.PrintMap();
+
+	if(map1.PassMap(s))
+	{
+		map1.PrintMap();
+	}
+
+	fclose(fp);
+}
+
+int main()
+{
+	funtest();
+	return 0;
+}
