@@ -1,0 +1,226 @@
+#include <iostream>
+using namespace std;
+
+#include <stack>
+//1--push|next   -1---pop|out    0---pop|next
+int PriorityCmp(char str1,char str2)
+{
+	if(str1=='#')
+		return 1;
+
+	if(str1=='(')
+	{
+		if(str2==')')
+			return 0;
+		else
+			return 1;
+	}
+	if(str1=='*'||str1=='/')
+	{
+		if(str2=='(')
+			return 1;
+		else
+			return -1;
+	}
+	if(str1=='+'||str1=='-')
+	{
+		if(str2=='+'||str2=='-'||str2==')')
+			return -1;
+
+		else
+			return 1;
+	}
+	
+}
+
+bool IsOperator(char str)
+{
+	char op[]="+-*/()";
+	for(int i=0;i<strlen(op);i++)
+	{
+		if(str==op[i])
+			return true;
+	}
+	return false;
+}
+
+char* GetRPN(char* str)
+{
+	stack<char> s;
+	s.push('#');
+	size_t len=strlen(str);
+	char* dst=new char[2*len];
+	int j=0;
+
+	for(int i=0;i<strlen(str);i++)
+	{
+
+		if(!IsOperator(str[i]))
+		{
+			while(!IsOperator(str[i])&&str[i]!='\0')
+			{
+				dst[j]=str[i];
+				i++;
+				j++;
+			}
+			dst[j]=' ';
+			j++;
+			i--;
+		}
+		else
+		{
+			
+			char ch=s.top();
+			if(PriorityCmp(ch,str[i])==1)
+			{
+				s.push(str[i]);
+			}
+			if(PriorityCmp(ch,str[i])==0)
+			{
+				s.pop();
+			}
+	
+			if(PriorityCmp(ch,str[i])==-1)
+			{
+				dst[j]=ch;
+				s.pop();
+				i--;
+				j++;
+			}
+		}
+	}
+
+	char c;
+	while((c=s.top())!='#')
+	{
+		dst[j]=c;
+		j++;
+		s.pop();
+	}
+	dst[j]='\0';
+	return dst;
+}
+
+
+
+int CalculatorRPN(char* str)
+{
+	stack<int> s;
+	char* dst=GetRPN(str);
+	cout<<dst<<endl;
+	
+
+	for(int i=0;i<strlen(dst);i++)
+	{
+		if(!IsOperator(dst[i]))
+		{
+			int ret=0;
+			while(dst[i]!=' '&&dst[i]!='\0')
+			{
+				ret=dst[i]-'0'+10*ret;
+				i++;
+			}
+			s.push(ret);
+		}
+		else
+		{
+			int ch1;
+			int ch2;
+			int ret;
+			ch2=s.top();
+			s.pop();
+			ch1=s.top();
+			s.pop();
+			switch(dst[i])
+			{
+			case '+':ret=ch1+ch2;break;
+			case '-':ret=ch1-ch2;break;
+			case '*':ret=ch1*ch2;break;
+			case '/':
+				{
+					if(ch2==0)
+						abort();
+					else
+						ret=ch1/ch2;
+				}break;
+			default:break;
+			}
+			s.push(ret);
+		}
+	}
+	
+	return s.top();
+
+}
+
+
+void funtest()
+{
+	cout<<CalculatorRPN("12*(3+4)-6+8/2")<<endl;
+	cout<<CalculatorRPN("1+2+3-4")<<endl;
+	cout<<CalculatorRPN("(2*3+6)/2")<<endl;
+	cout<<CalculatorRPN("(2*(10+20)+5*2)/10")<<endl;
+}
+
+int main()
+{
+	funtest();
+	return 0;
+}
+
+
+
+
+
+
+
+
+//char* GetRPN(char* str)
+//{
+//	stack<char> s;
+//	s.push('#');
+//	size_t len=strlen(str);
+//	char* dst=new char[2*len];
+//	int j=0;
+//
+//	for(int i=0;i<strlen(str);i++)
+//	{
+//
+//		if(!IsOperator(str[i]))
+//		{
+//			dst[j]=str[i];
+//			j++;
+//		}
+//		else
+//		{
+//			
+//			char ch=s.top();
+//			if(PriorityCmp(ch,str[i])==1)
+//			{
+//				s.push(str[i]);
+//			}
+//			if(PriorityCmp(ch,str[i])==0)
+//			{
+//				s.pop();
+//			}
+//	
+//			if(PriorityCmp(ch,str[i])==-1)
+//			{
+//				dst[j]=ch;
+//				s.pop();
+//				i--;
+//				j++;
+//			}
+//		}
+//	}
+//
+//	char c;
+//	while((c=s.top())!='#')
+//	{
+//		dst[j]=c;
+//		j++;
+//		s.pop();
+//	}
+//	dst[j]='\0';
+//	return dst;
+//}
