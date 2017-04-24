@@ -1,0 +1,120 @@
+#include <iostream>
+using namespace std;
+
+template<class T>
+class SymmetricMatrix
+{
+public:
+	
+
+
+	SymmetricMatrix(T* a, size_t N)
+		:_pData(0)
+		,_row(N)
+		,_col(N)
+	{
+		_pData=new T[(1+N)*N>>1];
+		size_t index=0;
+		for(size_t i=0;i<N;i++)
+		{
+			for(size_t j=0;j<=i;j++)
+			{
+				_pData[index]=a[i*N+j];
+				index++;
+			}
+		}
+	}
+	T& Acess(int row, int col)
+	{
+		if(row>=col)
+		{
+			return _pData[row*(1+row)/2+col];
+		}
+		else
+		{
+			return _pData[col*(1+col)/2+row];
+		}
+	}
+    const T& Acess(int row, int col)const
+	{
+		if(row>=col)
+		{
+			return _pData[row*(1+row)/2+col];
+		}
+		else
+		{
+			return _pData[col*(1+col)/2+row];
+		}
+	}
+	~SymmetricMatrix()
+	{
+		if(_pData)
+		{
+			delete[] _pData;
+			_pData=NULL;
+		}
+	}
+
+	friend ostream& operator<< <T>(ostream& _cout,const SymmetricMatrix<T>& s);
+
+	
+private:
+	T* _pData;
+	size_t _row;
+	size_t _col;
+};
+
+template<class T>
+ostream& operator<<(ostream& _cout,const SymmetricMatrix<T>& s)
+{
+	for(size_t i=0;i<s._row;i++)
+	{
+		for(size_t j=0;j<s._col;j++)
+		{
+			_cout<<s.Acess(i,j)<<" ";
+		}
+		_cout<<endl;
+	}
+	_cout<<endl;
+	return _cout;
+}
+
+void funtest()
+{
+	int a[5][5] = {
+		{0, 1, 2, 3, 4},
+		{1, 0, 1, 2, 3},
+		{2, 1, 0, 1, 2},
+		{3, 2, 1, 0, 1},
+		{4, 3, 2, 1, 0}};
+
+	SymmetricMatrix<int> s((int*)a,5);
+	cout<<s.Acess(0,0)<<endl;
+	cout<<s.Acess(4,0)<<endl;
+	cout<<s.Acess(3,1)<<endl;
+	cout<<s.Acess(4,4)<<endl;
+	cout<<s.Acess(0,4)<<endl;
+	cout<<s.Acess(3,4)<<endl;
+	cout<<s<<endl;
+}
+
+int main()
+{
+	funtest();
+	return 0;
+}
+
+
+
+//int main()
+//{
+//	int a[5][5] = {
+//		{0, 1, 2, 3, 4},
+//		{1, 0, 1, 2, 3},
+//		{2, 1, 0, 1, 2},
+//		{3, 2, 1, 0, 1},
+//		{4, 3, 2, 1, 0}};
+//
+//	cout<<a[5][5]<<endl;
+//	return 0;
+//}

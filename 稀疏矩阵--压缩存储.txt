@@ -1,0 +1,265 @@
+#include <iostream>
+using namespace std;
+#include <vector>
+#include <assert.h>
+
+template<class T>
+class SparseMatrix
+{
+	template<class T>
+	struct Trituple
+	{
+		Trituple(size_t row, size_t col, const T& data)
+			: _row(row)
+			, _col(col)
+			, _data(data)
+		{}
+
+		Trituple()
+		{}
+
+		size_t _row;
+		size_t _col;
+		T _data;
+	};
+
+public:
+
+        // 稀疏矩阵的压缩存储
+	SparseMatrix(int* array, size_t row, size_t col, const T& invalid)
+		: _row(row)
+		, _col(col)
+		, _invalid(invalid)
+	{
+		for(size_t i=0;i<row;++i)
+		{
+			for(size_t j=0;j<col;++j)
+			{
+				if(array[i*col+j]!=_invalid)
+				{
+					_pData.push_back(Trituple<T>(i,j,array[i*col+j]));
+				}
+			}
+		}
+	}
+
+	SparseMatrix()
+	{}
+
+    // 访问稀疏矩阵中row行col中的元素
+	T& Access(int row, int col)
+	{
+		vector<Trituple<T> >::iterator it=_pData.begin();
+		while(it!=_pData.end())
+		{
+			if(row==it->_row&&col==it->_col)
+				return it->_data;
+			++it;
+		}
+		return _invalid;
+	}
+
+    // 还原稀疏矩阵
+	template<class T>
+	friend ostream& operator<<(ostream& _cout, SparseMatrix<T>& s)
+	{
+		size_t index=0;
+		for(size_t i=0;i<s._row;++i)
+		{
+			for(size_t j=0;j<s._col;++j)
+			{
+				if(index<s._pData.size()&&i==(s._pData[index])._row&&j==(s._pData[index])._col)
+				{
+					_cout<<(s._pData[index])._data<<" ";
+					++index;
+				}
+				else
+				{
+					_cout<<s._invalid<<" ";
+				}
+			}
+			_cout<<endl;
+		}
+		return _cout;
+	}
+
+	// 实现稀疏矩阵的逆置，并给出时间复杂度
+	SparseMatrix<T> Transprot()
+	{
+		SparseMatrix<T> s;
+		s._row=_col;
+		s._col=_row;
+		s._invalid=_invalid;
+
+		for(size_t i=0;i<_col;++i)
+		{
+			for(size_t j=0;j<_pData.size();++j)
+			{
+				if(i==_pData[j]._col)
+				{
+					s._pData.push_back(Trituple<T>(i,_pData[j]._row,_pData[j]._data));
+				}
+					
+			}
+		}
+		return s;
+}
+
+
+	// 实现稀疏矩阵的快速逆置，并给出时间复杂度
+	SparseMatrix<T> FastTransprot()
+	{
+		SparseMatrix<T> s;
+		s._row=_col;
+		s._col=_row;
+		s._invalid=_invalid;
+		s._pData.resize(_pData.size());
+
+		int* RowCount=new int[_col];
+		memset(RowCount,0,_pData.size()*sizeof(int));
+		int* RowStart=new int[_col];
+		memset(RowStart,0,_pData.size()*sizeof(int));
+
+		for(size_t i=0;i<_pData.size();++i)
+		{
+			++RowCount[_pData[i]._col];
+		}
+
+		for(size_t j=1;j<_col;++j)
+		{
+			RowStart[j]=RowCount[j-1]+RowStart[j-1];
+		}
+
+		for(size_t index=0;index<_pData.size();++index)
+		{
+			int& addr=RowStart[_pData[index]._col];
+			s._pData[addr]=_pData[index];
+			swap(s._pData[addr]._row,s._pData[addr]._col);
+			++addr;
+		}
+
+		return s;
+	}
+
+    // 实现稀疏矩阵的加法操作
+	SparseMatrix<T> operator+(const SparseMatrix<T>& sp)
+	{
+		assert(_row==sp._row&&_col==sp._col);
+
+		SparseMatrix<T> s;
+		s._row=_row;
+		s._col=_col;
+		s._invalid=_invalid;
+
+		size_t i=0;
+		size_t j=0;
+		while(i<_pData.size()&&j<sp._pData.size())
+		{
+			int addr1=(_pData[i]._row)*_col+_pData[i]._col;
+			int addr2=(sp._pData[j]._row)*sp._col+sp._pData[j]._col;
+
+			if(addr1<addr2)
+			{
+				s._pData.push_back(_pData[i]);
+				++i;
+			}
+			else if(addr1>addr2)
+			{
+				s._pData.push_back(sp._pData[j]);
+				++j;
+			}
+			else
+			{
+				int ret=_pData[i]._data+sp._pData[j]._data;
+				if(ret!=s._invalid)
+				{
+					s._pData.push_back(_pData[i]);
+					s._pData.back()._data=ret;
+				}
+				++i;
+				++j;
+			}
+		}
+
+		while(i<_pData.size())
+		{
+			s._pData.push_back(_pData[i]);
+			++i;
+		}
+		while(j<sp._pData.size())
+		{
+			s._pData.push_back(sp._pData[j]);
+			++j;
+		}
+
+		return s;
+	}
+
+private:
+	vector<Trituple<T>> _pData;
+	size_t _row;
+	size_t _col;
+	T _invalid;
+};
+
+
+void funtest()
+{
+	int arr[6][5]={
+		{1, 0, 3, 0, 5},
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0},
+		{1, 0, 3, 0, 5},
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0}};
+	
+
+	int brr[6][5]={
+		{0, 0, 3, 0, 0},
+		{0, 0, 1, 0, 2},
+		{0, 0, 0, 0, 0},
+		{0, 6, 0, 0, -5},
+		{0, 0, 0, 0, 1},
+		{0, 0, 3, 0, 0}};
+
+
+	SparseMatrix<int> s((int*)arr,sizeof(arr)/sizeof(arr[0]),sizeof(arr[0])/sizeof(arr[0][0]),0);
+	SparseMatrix<int> s1((int*)brr,sizeof(arr)/sizeof(arr[0]),sizeof(arr[0])/sizeof(arr[0][0]),0);
+	cout<<s.Access(0,0)<<endl;
+	cout<<s.Access(1,2)<<endl;
+	cout<<s.Access(3,0)<<endl;
+	cout<<s.Access(5,4)<<endl;
+	cout<<s<<endl;
+	cout<<s.Transprot()<<endl;
+	cout<<s.FastTransprot()<<endl;
+	SparseMatrix<int> s2=s+s1;
+	cout<<s2<<endl;
+}
+
+int main()
+{
+	funtest();
+	return 0;
+}
+
+
+
+//void funtest()
+//{
+//	vector<int> v;
+//	v.push_back(1);
+//	v.push_back(2);
+//	v.push_back(3);
+//	v.push_back(4);
+//	v.push_back(5);
+//
+//	vector<int>::iterator it;
+//
+//}
+//
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
