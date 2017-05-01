@@ -1,0 +1,326 @@
+
+#pragma once
+
+
+#include <iostream>
+using namespace std;
+#include <assert.h>
+#include <queue>
+#include <vector>
+
+template<class T>
+struct Node
+{
+	Node(T value)
+		:_value(value)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+	{}
+
+	T _value;
+	Node<T>* _pLeft;
+	Node<T>* _pRight;
+};
+
+template<class T>
+class BinaryTree
+{
+public:
+	BinaryTree(T* arr,size_t size,T invalid)
+		:_pRoot(NULL)
+	{
+		size_t index=0;
+		CreatBinaryTree(_pRoot,arr,size,index,invalid);
+	}
+
+	BinaryTree()
+		:_pRoot(NULL)
+	{}
+
+	BinaryTree(const BinaryTree& bt)
+	{
+		_pRoot=CopyTree(bt._pRoot);
+	}
+
+	BinaryTree& operator=(const BinaryTree& bt)
+	{
+		if(this!=&bt)
+		{
+			Destory(_pRoot);
+			_pRoot=CopyTree(bt._pRoot);
+		}
+
+		return *this;
+	}
+
+	void PreOrder()
+	{
+		_PreOrder(_pRoot);
+		cout<<endl;
+	}
+
+	void MidOrder()
+	{
+		_MidOrder(_pRoot);
+		cout<<endl;
+	}
+
+
+	void LastOrder()
+	{
+		_LastOrder(_pRoot);
+		cout<<endl;
+	}
+
+	void LevelOrder()
+	{
+		_LevelOrder(_pRoot);
+		cout<<endl;
+	}
+
+	Node<T>* FindParent(Node<T>* pRet)
+	{
+		return _FindParent(_pRoot,pRet);
+	}
+
+	Node<T>* Find(const T& data)
+	{
+		return _Find(_pRoot,data);
+	}
+
+	~BinaryTree()
+	{
+		if(_pRoot)
+		{
+			Destory(_pRoot);
+		}
+	}
+
+
+	int GetTreeHight()
+	{
+		return _GetTreeHight(_pRoot);
+	}
+
+	int LeafNodeNum()
+	{
+		return _LeafNodeNum(_pRoot);
+	}
+
+
+	Node<T>* LastAncestorNode(Node<T>* N1,Node<T>* N2)
+	{
+		return _LastAncestorNode(_pRoot,N1,N2);
+	}
+
+
+private:
+	
+	int _GetTreeHight(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+			return 1;
+
+		int left=_GetTreeHight(pRoot->_pLeft)+1;
+		int right=_GetTreeHight(pRoot->_pRight)+1;
+
+		return left>right?left:right;
+	}
+
+
+	int _LeafNodeNum(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+			return 1;
+
+		int left=_LeafNodeNum(pRoot->_pLeft);
+		int right=_LeafNodeNum(pRoot->_pRight);
+
+		return left+right;
+	}
+
+
+	bool GetWay(Node<T>* pRoot,Node<T>* N,vector<Node<T>*>& v,size_t index)
+	{
+		if(pRoot==NULL)
+			return false;
+
+		v.push_back(pRoot);
+		if(pRoot==N)
+			return true;
+
+		pRoot=v.back();
+		if(GetWay(pRoot->_pLeft,N,v,index+1))
+			return true;
+
+		v.pop_back();
+		pRoot=v.back();
+		return GetWay(pRoot->_pRight,N,v,index+1);
+	}
+
+	Node<T>* _LastAncestorNode(Node<T>* pRoot,Node<T>* N1,Node<T>* N2)
+	{
+		if(pRoot==NULL||(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL))
+			return NULL;
+
+		vector<Node<T>*> v1;
+		vector<Node<T>*> v2;
+		if(GetWay(pRoot,N1,v1,0)&&GetWay(pRoot,N2,v2,0))
+		{
+			for(size_t i=v1.size();i>0;--i)
+			{
+				for(size_t j=v2.size();j>0;--j)
+				{
+					if(v1[i-1]==v2[j-1])
+						return v1[i-1];
+				}
+			}
+		}
+		
+		return NULL;
+	}
+
+
+	void CreatBinaryTree(Node<T>*& pRoot,T* arr,size_t size,size_t& index,T invalid)
+	{
+		assert(arr);
+		
+
+		if(index<size&&arr[index]!=invalid)
+		{
+			pRoot=new Node<T>(arr[index]);
+
+			CreatBinaryTree(pRoot->_pLeft,arr,size,++index,invalid);
+
+			CreatBinaryTree(pRoot->_pRight,arr,size,++index,invalid);
+		}
+	}
+
+	Node<T>* CopyTree(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		Node<T>* _pTmp=new Node<T>(pRoot->_value);
+
+		_pTmp->_pLeft=CopyTree(pRoot->_pLeft);
+		_pTmp->_pRight=CopyTree(pRoot->_pRight);
+
+		return _pTmp;
+	}
+
+
+	void _PreOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		cout<<pRoot->_value<<" ";
+		_PreOrder(pRoot->_pLeft);
+		_PreOrder(pRoot->_pRight);
+	}
+
+
+	void _MidOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_MidOrder(pRoot->_pLeft);
+		cout<<pRoot->_value<<" ";
+		_MidOrder(pRoot->_pRight);
+	}
+	
+
+	void _LastOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_LastOrder(pRoot->_pLeft);
+		_LastOrder(pRoot->_pRight);
+		cout<<pRoot->_value<<" ";
+	}
+
+
+	void _LevelOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		queue<Node<T>*> q;
+		q.push(pRoot);
+
+		while(!q.empty())
+		{
+			Node<T>* pNode=q.front();
+
+			cout<<pNode->_value<<" ";
+				
+			Node<T>* pCur=pNode->_pLeft;
+			if(pCur)
+				q.push(pCur);
+				
+			pCur=pNode->_pRight;
+			if(pCur)
+				q.push(pCur);
+			
+			q.pop();
+		}
+	}
+
+
+	Node<T>* _FindParent(Node<T>* pRoot,Node<T>* pRet)
+	{
+		if(pRoot==NULL||pRet==pRoot)
+			return NULL;
+
+		if(pRoot->_pLeft==pRet||pRoot->_pRight==pRet)
+		{
+			return pRoot;
+		}
+		
+		Node<T>* pcur=_FindParent(pRoot->_pLeft,pRet);
+		if(pcur)
+			return pcur;
+
+		return _FindParent(pRoot->_pRight,pRet);
+
+	}
+
+
+
+	Node<T>* _Find(Node<T>* pRoot,const T& data)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		if(pRoot->_value==data)
+			return pRoot;
+
+		Node<T>* pcur=_Find(pRoot->_pLeft,data);
+		if(pcur)
+			return pcur;
+
+		return _Find(pRoot->_pRight,data);
+	}
+
+	void Destory(Node<T>*& pRoot)
+	{
+		if(pRoot)
+		{
+			Destory(pRoot->_pLeft);
+			Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+private:
+	Node<T>* _pRoot;
+};
