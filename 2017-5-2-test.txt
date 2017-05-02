@@ -1,0 +1,328 @@
+#include <iostream>
+using namespace std;
+#include <stack>
+#include <queue>
+
+
+
+//实现一个栈，要求实现Push（出栈）、Pop（入栈）、Min（返回最小值的操作）的时间复杂度为O(1)
+
+//1仅在底层封装一个栈
+//template<class T>
+//class StackMin
+//{
+//public:
+//	StackMin()
+//	{}
+//
+//	~StackMin()
+//	{}
+//
+//	void Push(T data)
+//	{
+//		T min;
+//		if(s.empty())
+//		{
+//			min=data;
+//			s.push(data);
+//			s.push(min);
+//		}
+//		else if(!s.empty()&&(min=s.top())>data)
+//		{
+//			min=data;
+//			s.push(data);
+//			s.push(min);
+//		}
+//		else
+//		{
+//			s.push(data);
+//			s.push(min);
+//		}
+//	}
+//
+//	void Pop()
+//	{
+//		s.pop();
+//		s.pop();
+//	}
+//
+//
+//	T Min()
+//	{
+//		return s.top();
+//	}
+//
+//private:
+//	stack<T> s;
+//};
+
+
+
+//2.在底层封装2个栈s1--保存数据  s2--保存当前最小值
+//template<class T>
+//class StackMin
+//{
+//public:
+//	StackMin()
+//	{}
+//
+//	~StackMin()
+//	{}
+//
+//	void Push(T data)
+//	{
+//		if(s2.empty()||data<s2.top())
+//		{
+//			s1.push(data);
+//			s2.push(data);
+//		}
+//		else
+//		{
+//			s1.push(data);
+//		}
+//	}
+//
+//	void Pop()
+//	{
+//		if(s1.empty())
+//			return ;
+//
+//		if(s1.top()==s2.top())
+//		{
+//			s1.pop();
+//			s2.pop();
+//		}
+//		else
+//		{
+//			s1.pop();
+//		}
+//	}
+//
+//
+//	T Min()
+//	{
+//		return s2.top();
+//	}
+//
+//private:
+//	stack<T> s1;
+//	stack<T> s2;
+//};
+
+//void funtest()
+//{
+//	StackMin<int> s;
+//	s.Push(5);
+//	s.Push(4);
+//	s.Push(2);
+//	s.Push(3);
+//	s.Push(1);
+//
+//	cout<<s.Min()<<endl;
+//	s.Pop();
+//	s.Pop();
+//	cout<<s.Min()<<endl;
+//	s.Pop();
+//	s.Pop();
+//	cout<<s.Min()<<endl;
+//}
+//
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+
+
+//使用两个栈实现一个队列
+//1.s1--push    s2--pop
+//1.s1--push    s2--pop  但将数据都保存在s1中，s2作为过渡栈，便于查对头和队尾
+//template<class T>
+//class StackQueue
+//{
+//public:
+//	StackQueue()
+//	{}
+//
+//	~StackQueue()
+//	{}
+//
+//	void Push(T data)
+//	{
+//		s1.push(data);
+//	}
+//
+//	void Pop()
+//	{
+//		while(!s1.empty())
+//		{
+//			s2.push(s1.top());
+//			s1.pop();
+//		}
+//		
+//		if(!s2.empty())
+//		{
+//			s2.pop();
+//			while(!s2.empty())
+//			{
+//				s1.push(s2.top());
+//				s2.pop();
+//			}
+//		}
+//
+//
+//	}
+//
+//	T Front()
+//	{
+//		while(!s1.empty())
+//		{
+//			s2.push(s1.top());
+//			s1.pop();
+//		}
+//		T tmp=s2.top();
+//		while(!s2.empty())
+//		{
+//			s1.push(s2.top());
+//			s2.pop();
+//		}
+//		return tmp;
+//	}
+//
+//	T Back()
+//	{
+//		return s1.top();
+//	}
+//
+//
+//private:
+//	stack<T> s1;
+//	stack<T> s2;
+//
+//};
+//
+//
+//void funtest()
+//{
+//	StackQueue<int> sq;
+//	sq.Push(1);
+//	sq.Push(2);
+//	sq.Push(3);
+//	sq.Push(4);
+//	cout<<sq.Front()<<endl;
+//	cout<<sq.Back()<<endl;
+//
+//
+//	sq.Pop();
+//	cout<<sq.Front()<<endl;
+//	cout<<sq.Back()<<endl;
+//	sq.Pop();
+//	sq.Pop();
+//	cout<<sq.Front()<<endl;
+//	cout<<sq.Back()<<endl;
+//
+//	
+//	sq.Push(5);
+//	cout<<sq.Front()<<endl;
+//	cout<<sq.Back()<<endl;
+//	sq.Push(6);
+//
+//	sq.Pop();
+//	sq.Pop();
+//	sq.Pop();
+//	sq.Pop();
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+
+
+
+//使用两个队列实现一个栈   q1--真正用于保存数据的队列  q2--用于出栈时过渡的队列
+//template<class T>
+//class QueueStack
+//{
+//public:
+//	QueueStack()
+//	{}
+//
+//	~QueueStack()
+//	{}
+//
+//	void Push(T data)
+//	{
+//		q1.push(data);
+//	}
+//
+//	void Pop()
+//	{
+//		if(q1.empty())
+//			return ;
+//
+//		int size=q1.size();
+//		for(int i=0;i<size-1;++i)
+//		{
+//			q2.push(q1.front());
+//			q1.pop();
+//		}
+//		q1.pop();
+//		while(!q2.empty())
+//		{
+//			q1.push(q2.front());
+//			q2.pop();
+//		}
+//	}
+//
+//	T& Top()
+//	{
+//		return q1.back();
+//	}
+//
+//
+//private:
+//	queue<T> q1;
+//	queue<T> q2;
+//
+//};
+//
+//
+//void funtest()
+//{
+//	QueueStack<int> qs;
+//	qs.Push(1);
+//	qs.Push(2);
+//	qs.Push(3);
+//
+//	cout<<qs.Top()<<endl;
+//	qs.Pop();
+//	qs.Pop();
+//	cout<<qs.Top()<<endl;
+//
+//	qs.Push(4);
+//	qs.Push(5);
+//	qs.Push(6);
+//
+//	qs.Pop();
+//	cout<<qs.Top()<<endl;
+//	qs.Pop();
+//	cout<<qs.Top()<<endl;
+//	qs.Pop();
+//	cout<<qs.Top()<<endl;
+//	qs.Pop();
+//	//cout<<qs.Top()<<endl;
+//	qs.Pop();
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
