@@ -1,0 +1,59 @@
+#include <iostream>
+using namespace std;
+#include <assert.h>
+#include <stack>
+
+
+//元素出栈、入栈顺序的合法性
+//template<class T>
+//bool IsLegal(T Pusharr[],T Poparr[],size_t size)
+//{
+//	assert(Pusharr);
+//	assert(Poparr);
+//
+//	stack<T> s;
+//	size_t index=0;
+//	for(size_t i=0;i<size;++i)
+//	{
+//		if(Poparr[index]==Pusharr[i])
+//			++index;
+//		else
+//			s.push(Pusharr[i]);
+//
+//	}
+//
+//	if(index==size)
+//		return true;
+//	else if(index<size&&s.empty())
+//		return false;
+//	else
+//	{
+//		while(!s.empty())
+//		{
+//			if(Poparr[index]!=s.top())
+//				return false;
+//			else
+//			{
+//				++index;
+//				s.pop();
+//			}
+//		}
+//		return true;
+//	}
+//}
+//
+//
+//void funtest()
+//{
+//	char* str1="12345";
+//	char* str2="53421";
+//
+//	cout<<IsLegal(str1,str2,strlen(str1))<<endl;
+//}
+//
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
