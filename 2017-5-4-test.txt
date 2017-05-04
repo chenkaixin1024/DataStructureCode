@@ -1,0 +1,295 @@
+#include <iostream>
+using namespace std;
+#include <assert.h>
+#include <stack>
+
+
+//元素出栈、入栈顺序的合法性
+//template<class T>
+//bool IsLegal(T Pusharr[],T Poparr[],size_t size)
+//{
+//	assert(Pusharr);
+//	assert(Poparr);
+//
+//	stack<T> s;
+//	size_t index=0;
+//	for(size_t i=0;i<size;++i)
+//	{
+//		if(Poparr[index]==Pusharr[i])
+//			++index;
+//		else
+//			s.push(Pusharr[i]);
+//
+//	}
+//
+//	if(index==size)
+//		return true;
+//	else if(index<size&&s.empty())
+//		return false;
+//	else
+//	{
+//		while(!s.empty())
+//		{
+//			if(Poparr[index]!=s.top())
+//				return false;
+//			else
+//			{
+//				++index;
+//				s.pop();
+//			}
+//		}
+//		return true;
+//	}
+//}
+//
+//
+//void funtest()
+//{
+//	char* str1="12345";
+//	char* str2="53421";
+//
+//	cout<<IsLegal(str1,str2,strlen(str1))<<endl;
+//}
+//
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+
+
+//一个数组实现两个栈(共享栈)
+//#define ADDCAPACITY 10
+//
+//template<class T>
+//class SharedStack
+//{
+//public:
+//	SharedStack(size_t capacity=10)
+//		:_pData(NULL)
+//		,_leftsize(0)
+//		,_rightsize(0)
+//		,_capacity(capacity)
+//	{
+//		if(_capacity!=0)
+//		{
+//			_pData=new T[capacity];
+//		}
+//	}
+//
+//	void PushLeft(const T& data)
+//	{
+//		CheckCapacity();
+//		
+//		_pData[_leftsize]=data;
+//		_leftsize++;
+//	}
+//
+//	void PushRight(const T& data)
+//	{
+//		CheckCapacity();
+//
+//		_pData[_capacity-_rightsize-1]=data;
+//		_rightsize++;
+//	}
+//
+//	void PopLeft()
+//	{
+//		if(_leftsize==0)
+//			return ;
+//		_leftsize--;
+//	}
+//
+//	void PopRight()
+//	{
+//		if(_rightsize==0)
+//			return ;
+//		_rightsize--;
+//	}
+//
+//	T& LeftTop()
+//	{
+//		return _pData[_leftsize-1];
+//	}
+//
+//	T& RightTop()
+//	{
+//		return _pData[_capacity-_rightsize];
+//	}
+//
+//
+//	~SharedStack()
+//	{
+//		if(_pData)
+//		{
+//			delete[] _pData;
+//			_pData=NULL;
+//		}
+//	}
+//
+//
+//private:
+//	void CheckCapacity()
+//	{
+//		if(_leftsize+_rightsize==_capacity)
+//		{
+//			T* tmp=_pData;
+//			size_t newcapacity=_capacity+ADDCAPACITY;
+//			_pData=new T[newcapacity];
+//			for(size_t i=0;i<_leftsize;++i)
+//			{
+//				_pData[i]=tmp[i];
+//			}
+//
+//			for(size_t j=0;j<_rightsize;++j)
+//			{
+//				_pData[newcapacity-j-1]=tmp[_capacity-j-1];
+//			}
+//
+//			_capacity=newcapacity;
+//			delete[] tmp;
+//		}
+//	}
+//
+//private:
+//	T* _pData;
+//	size_t _leftsize;
+//	size_t _rightsize;
+//	size_t _capacity;
+//
+//};
+//
+//void funtest()
+//{
+//	SharedStack<int> s;
+//	s.PushLeft(1);
+//	s.PushLeft(2);
+//	s.PushLeft(3);
+//	cout<<s.LeftTop()<<endl;
+//
+//	s.PushLeft(4);
+//	s.PushLeft(5);
+//	cout<<s.LeftTop()<<endl;
+//
+//	s.PushRight(1);
+//	s.PushRight(2);
+//	s.PushRight(3);
+//	cout<<s.RightTop()<<endl;
+//
+//	s.PushRight(4);
+//	s.PushRight(5);
+//	cout<<s.RightTop()<<endl;
+//
+//	s.PushLeft(6);
+//	s.PushRight(6);
+//
+//	s.PopLeft();
+//	s.PopLeft();
+//	cout<<s.LeftTop()<<endl;
+//
+//	s.PopRight();
+//	s.PopRight();
+//	cout<<s.RightTop()<<endl;
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+
+
+//简单背包问题-----非递归
+//void Print(int* arr,int size,int* brr)
+//{
+//	for(int i=0;i<size;i++)
+//	{
+//		if(brr[i]==1)
+//			cout<<arr[i]<<" ";
+//	}
+//	cout<<endl;
+//}
+//
+//int AddStack(stack<int> s,int* arr)
+//{
+//	int sum=0;
+//	while(!s.empty())
+//	{
+//		int index=s.top();
+//		sum+=arr[index];
+//		s.pop();
+//	}
+//	return sum;
+//}
+//
+//
+//void FillBag(int arr[],int size,int T)
+//{
+//	assert(arr);
+//
+//	int* brr=new int[size];
+//	memset(brr,0,size*sizeof(arr[0]));
+//
+//	stack<int> s;
+//	for(int i=0;i<size;i++)
+//	{
+//		if(arr[i]==T)
+//			cout<<arr[i]<<endl;
+//		else if(arr[i]>T)
+//			continue;
+//		else
+//		{
+//			s.push(i);
+//			brr[i]=1;
+//		}
+//
+//		int index=i;
+//		while(!s.empty())
+//		{
+//			int sum=AddStack(s,arr);
+//			for(int j=index+1;j<size;j++)
+//			{
+//				sum+=arr[j];
+//
+//				if(sum==T)
+//				{
+//					s.push(j);
+//					brr[j]=1;
+//					Print(arr,size,brr);
+//				}
+//				else if(sum>T)
+//				{
+//					sum-=arr[j];
+//				}
+//				else
+//				{
+//					s.push(j);
+//					brr[j]=1;
+//				}
+//			}
+//			index=s.top();
+//			s.pop();
+//			brr[index]=0;
+//			
+//		}
+//	}
+//}
+//
+//
+//void funtest()
+//{
+//	int arr[]={1,8,4,3,5,2};
+//	FillBag(arr,6,10,0);
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
