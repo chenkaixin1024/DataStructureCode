@@ -1,0 +1,115 @@
+        void _Rebuild(Node<T>*& pRoot,T* arr,T* brr,size_t size)
+	{
+		if(size==0)
+			return ;
+		pRoot=new Node<T>(arr[0]);
+
+		size_t i=0;
+		for(;i<size;i++)
+		{
+			if(arr[0]==brr[i])
+				break;
+		}
+
+		_Rebuild(pRoot->_pLeft,arr+1,brr,i);
+		_Rebuild(pRoot->_pRight,arr+i+1,brr+i+1,size-i-1);
+		
+	}
+
+
+
+	void _PreOrder_Nor(Node<T>* pRoot)      
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		s.push(pRoot);
+
+		while(!s.empty())
+		{
+			Node<T>* pcur=s.top();
+			cout<<pcur->_value<<" ";
+			s.pop();
+
+			if(pcur->_pRight)
+				s.push(pcur->_pRight);
+			if(pcur->_pLeft)
+				s.push(pcur->_pLeft);
+		}
+	}
+
+	void _InOrder_Nor(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		Node<T>* pcur=pRoot;
+
+		while(pcur||!s.empty())
+		{
+			while(pcur)
+			{
+				s.push(pcur);
+				pcur=pcur->_pLeft;
+			}
+
+			pcur=s.top();
+			cout<<pcur->_value<<" ";
+			s.pop();
+				
+			pcur=pcur->_pRight;
+
+		}
+
+	}
+
+
+	void _LastOrder_Nor(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		Node<T>* pcur=pRoot;
+		Node<T>* pre=NULL;
+
+		s.push(pRoot);
+		while(!s.empty())
+		{
+			while(pcur)
+			{
+				if(pcur!=s.top())
+					s.push(pcur);
+				
+				pcur=pcur->_pLeft;
+			}
+
+			pcur=s.top();
+			
+			if(pcur->_pRight==NULL||pcur->_pRight==pre)
+			{
+				cout<<pcur->_value<<" ";
+				s.pop();
+				pre=pcur;
+				pcur=NULL;
+				
+			}
+			else
+				pcur=pcur->_pRight;
+
+
+			//while(pcur->_pRight==NULL||pcur->_pRight==pre)
+			//{
+			//	cout<<pcur->_value<<" ";
+			//	s.pop();
+			//	pre=pcur;
+			//	if(s.empty())
+			//		return ;
+			//	pcur=s.top();
+			//	
+			//}
+			//pcur=pcur->_pRight;
+		}
+	}
