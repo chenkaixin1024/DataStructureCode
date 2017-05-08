@@ -1,0 +1,786 @@
+#include <iostream>
+using namespace std;
+#include <assert.h>
+#include <queue>
+#include <vector>
+#include <stack>
+
+template<class T>
+struct Node
+{
+	Node(T value)
+		:_value(value)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+	{}
+
+	T _value;
+	Node<T>* _pLeft;
+	Node<T>* _pRight;
+};
+
+template<class T>
+class BinaryTree
+{
+public:
+	BinaryTree(T* arr,size_t size,T invalid)
+		:_pRoot(NULL)
+	{
+		size_t index=0;
+		CreatBinaryTree(_pRoot,arr,size,index,invalid);
+	}
+
+	BinaryTree()
+		:_pRoot(NULL)
+	{}
+
+	BinaryTree(const BinaryTree& bt)
+	{
+		_pRoot=CopyTree(bt._pRoot);
+	}
+
+	BinaryTree& operator=(const BinaryTree& bt)
+	{
+		if(this!=&bt)
+		{
+			Destory(_pRoot);
+			_pRoot=CopyTree(bt._pRoot);
+		}
+
+		return *this;
+	}
+
+	void PreOrder()            //前序--递归
+	{
+		_PreOrder(_pRoot);
+		cout<<endl;
+	}
+
+	void MidOrder()           //中序--递归
+	{
+		_MidOrder(_pRoot);
+		cout<<endl;
+	}
+
+
+	void LastOrder()         //后序--递归
+	{
+		_LastOrder(_pRoot);
+		cout<<endl;
+	}
+
+	void LevelOrder()        //层序
+	{
+		_LevelOrder(_pRoot);
+		cout<<endl;
+	}
+
+	Node<T>* FindParent(Node<T>* pRet)        //查找某一节点的双亲节点
+	{
+		return _FindParent(_pRoot,pRet);
+	}
+
+	Node<T>* Find(const T& data)           //查找值为data的节点
+	{
+		return _Find(_pRoot,data);
+	}
+
+	~BinaryTree()
+	{
+		if(_pRoot)
+		{
+			Destory(_pRoot);
+		}
+	}
+
+
+	int GetTreeHight()           //求二叉树的高度（根节点高度为1）
+	{
+		return _GetTreeHight(_pRoot);
+	}
+
+	int LeafNodeNum()           //求叶子节点的个数
+	{
+		return _LeafNodeNum(_pRoot);
+	}
+
+
+	Node<T>* LastAncestorNode(Node<T>* N1,Node<T>* N2)         //求两个节点最近的相同的祖先节点
+	{
+		return _LastAncestorNode(_pRoot,N1,N2);
+	}
+
+
+	int DistanceOfNodes()                 //求两个节点之间最远的距离
+	{
+		return _DistanceOfNodes(_pRoot);
+	}
+	
+	bool IsCompleteBinaryTree()          //判断是否为完全二叉树
+	{
+		return _IsCompleteBinaryTree(_pRoot);
+	}
+
+	BinaryTree<T> ImageBinaryTree()        //求镜像二叉树--递归
+	{
+		BinaryTree<T> bt;
+		bt._pRoot=CopyTree(_pRoot);
+		_ImageBinaryTree(bt._pRoot);
+		return bt;
+	}
+
+	BinaryTree<T> ImageBinaryTree_NOR()    //求镜像二叉树--非递归
+	{
+		BinaryTree<T> bt;
+		bt._pRoot=CopyTree(_pRoot);
+		_ImageBinaryTree_NOR(bt._pRoot);
+		return bt;
+	}
+
+	void PreOrder_Nor()        //前序--非递归
+	{
+		_PreOrder_Nor(_pRoot);
+		cout<<endl;
+	}
+
+	void InOrder_Nor()        //中序--非递归
+	{
+		_InOrder_Nor(_pRoot);
+		cout<<endl;
+	}
+
+	void LastOrder_Nor()
+	{
+		_LastOrder_Nor(_pRoot);
+	}
+
+	Node<T>* GetLeftChild(Node<T>* pCur)      //求某一节点的左孩子
+	{
+		return (pCur==NULL)? NULL:pCur->_pLeft;
+	}
+
+	Node<T>* GetRightChild(Node<T>* pCur)    //求某一节点的右孩子
+	{
+		return (pCur==NULL)? NULL:pCur->_pRight;
+	}
+
+	size_t GetKLevelCount(size_t k)       //求第K层的节点个数
+	{
+		return _GetKLevelCount(_pRoot, k);
+	}
+
+	void Rebuild(T* arr,T* brr,size_t size)     //根据前序和中序序列重建二叉树
+	{
+		assert(arr);
+		assert(brr);
+
+		if(_pRoot)
+			Destory(_pRoot);
+
+		size_t index=0;
+		_Rebuild(_pRoot,arr,brr,size);
+	}
+
+private:
+
+	void _Rebuild(Node<T>*& pRoot,T* arr,T* brr,size_t size)
+	{
+		if(size==0)
+			return ;
+		pRoot=new Node<T>(arr[0]);
+
+		size_t i=0;
+		for(;i<size;i++)
+		{
+			if(arr[0]==brr[i])
+				break;
+		}
+
+		_Rebuild(pRoot->_pLeft,arr+1,brr,i);
+		_Rebuild(pRoot->_pRight,arr+i+1,brr+i+1,size-i-1);
+		
+	}
+
+
+
+	void _PreOrder_Nor(Node<T>* pRoot)      
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		s.push(pRoot);
+
+		while(!s.empty())
+		{
+			Node<T>* pcur=s.top();
+			cout<<pcur->_value<<" ";
+			s.pop();
+
+			if(pcur->_pRight)
+				s.push(pcur->_pRight);
+			if(pcur->_pLeft)
+				s.push(pcur->_pLeft);
+		}
+	}
+
+	void _InOrder_Nor(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		Node<T>* pcur=pRoot;
+
+		while(pcur||!s.empty())
+		{
+			while(pcur)
+			{
+				s.push(pcur);
+				pcur=pcur->_pLeft;
+			}
+
+			//pcur=s.top();
+			//cout<<pcur->_value<<" ";
+			//s.pop();
+			//	
+			//pcur=pcur->_pRight;
+
+			pcur=s.top();
+			cout<<pcur->_value<<" ";
+			s.pop();
+			while(pcur->_pRight==NULL&&!s.empty())
+			{
+				pcur=s.top();
+				cout<<pcur->_value<<" ";
+				s.pop();
+			}
+			pcur=pcur->_pRight;
+		}
+
+	}
+
+
+	void _LastOrder_Nor(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		stack<Node<T>*> s;
+		Node<T>* pcur=pRoot;
+		Node<T>* pre=NULL;
+
+		s.push(pRoot);
+		while(!s.empty())
+		{
+			while(pcur)
+			{
+				if(pcur!=s.top())
+					s.push(pcur);
+				
+				pcur=pcur->_pLeft;
+			}
+
+			pcur=s.top();
+			
+			if(pcur->_pRight==NULL||pcur->_pRight==pre)
+			{
+				cout<<pcur->_value<<" ";
+				s.pop();
+				pre=pcur;
+				pcur=NULL;
+				
+			}
+			else
+				pcur=pcur->_pRight;
+
+			//加入循环，解决一段连续没有右子树的情况
+			//while(pcur->_pRight==NULL||pcur->_pRight==pre)
+			//{
+			//	cout<<pcur->_value<<" ";
+			//	s.pop();
+			//	pre=pcur;
+			//	if(s.empty())
+			//		return ;
+			//	pcur=s.top();
+			//	
+			//}
+			//pcur=pcur->_pRight;
+		}
+	}
+
+
+	size_t _GetKLevelCount(Node<T>* pRoot,size_t k)
+	{
+		if(pRoot==NULL||k<1)
+			return 0;
+
+		if(k==1)
+			return 1;
+
+		return _GetKLevelCount(pRoot->_pLeft,k-1)+_GetKLevelCount(pRoot->_pRight,k-1);
+	}
+
+
+	void _ImageBinaryTree_NOR(Node<T>* pRoot)
+	{
+		queue<Node<T>*> q;
+		q.push(pRoot);
+
+		while(!q.empty())
+		{
+			Node<T>* pCur=q.front();
+			q.pop();
+			if(pCur->_pLeft)
+				q.push(pCur->_pLeft);
+			if(pCur->_pRight)
+				q.push(pCur->_pRight);
+
+
+			swap(pCur->_pLeft,pCur->_pRight);
+		}
+	}
+
+
+
+	void _ImageBinaryTree(Node<T>* pRoot)
+	{
+		Node<T>* pcur=pRoot;
+
+		if(pcur==NULL||(pcur->_pLeft==NULL&&pcur->_pRight==NULL))
+			return ;
+
+		swap(pcur->_pLeft,pcur->_pRight);
+
+		_ImageBinaryTree(pcur->_pLeft);
+		_ImageBinaryTree(pcur->_pRight);
+	}
+
+
+	//bool _IsCompleteBinaryTree(Node<T>* pRoot)
+	//{
+	//	if(pRoot==NULL)
+	//		return true;
+
+	//	queue<Node<T>*> q;
+	//	q.push(pRoot);
+
+	//	while((pRoot=q.front())!=NULL)
+	//	{
+	//		q.push(pRoot->_pLeft);
+	//		q.push(pRoot->_pRight);
+	//		q.pop();
+	//	}
+
+	//	while(!q.empty()&&(pRoot=q.front())==NULL)
+	//	{
+	//		q.pop();	
+	//	}
+
+	//	if(!q.empty())
+	//		return false;
+
+	//	return true;
+
+	//}
+
+
+	bool _IsCompleteBinaryTree(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return true;
+
+		queue<Node<T>*> q;
+		q.push(pRoot);
+		Node<T>* pCur=NULL;
+		bool flag=false;
+		while(!q.empty())
+		{
+			pCur=q.front();
+			if((pCur->_pLeft==NULL||pCur->_pRight==NULL)&&flag)
+				return false;
+
+			if(pCur->_pLeft==NULL&&pCur->_pRight)
+				return false;
+			else if(pCur->_pRight==NULL&&pCur->_pLeft)
+			{
+				flag=true;
+				q.push(pCur->_pLeft);
+			}
+			else if(pCur->_pLeft==NULL&&pCur->_pRight==NULL)
+			{
+				flag=true;
+			}
+			else
+			{
+				q.push(pCur->_pLeft);
+				q.push(pCur->_pRight);
+			}
+			q.pop();
+		}
+
+		return true;
+	}
+
+	int _DistanceOfNodes(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		int left=_GetTreeHight(pRoot->_pLeft);
+		int right=_GetTreeHight(pRoot->_pRight);
+
+		return left+right;
+	}
+
+	
+	int _GetTreeHight(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+			return 1;
+
+		int left=_GetTreeHight(pRoot->_pLeft)+1;
+		int right=_GetTreeHight(pRoot->_pRight)+1;
+
+		return left>right?left:right;
+	}
+
+
+	int _LeafNodeNum(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+			return 1;
+
+		int left=_LeafNodeNum(pRoot->_pLeft);
+		int right=_LeafNodeNum(pRoot->_pRight);
+
+		return left+right;
+	}
+
+
+	//bool GetWay(Node<T>* pRoot,Node<T>* N,vector<Node<T>*>& v,size_t index)
+	//{
+	//	if(pRoot==NULL)
+	//		return false;
+
+	//	v.push_back(pRoot);
+	//	if(pRoot==N)
+	//		return true;
+
+	//	pRoot=v.back();
+	//	if(GetWay(pRoot->_pLeft,N,v,index+1))
+	//		return true;
+
+	//	v.pop_back();
+	//	pRoot=v.back();
+	//	return GetWay(pRoot->_pRight,N,v,index+1);
+	//}
+
+	//Node<T>* _LastAncestorNode(Node<T>* pRoot,Node<T>* N1,Node<T>* N2)
+	//{
+	//	if(pRoot==NULL||(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL))
+	//		return NULL;
+
+	//	vector<Node<T>*> v1;
+	//	vector<Node<T>*> v2;
+	//	if(GetWay(pRoot,N1,v1,0)&&GetWay(pRoot,N2,v2,0))
+	//	{
+	//		for(size_t i=v1.size();i>0;--i)
+	//		{
+	//			for(size_t j=v2.size();j>0;--j)
+	//			{
+	//				if(v1[i-1]==v2[j-1])
+	//					return v1[i-1];
+	//			}
+	//		}
+	//	}
+	//	
+	//	return NULL;
+	//}
+
+	bool _FindNode(Node<T>* pRoot,Node<T>* N)
+	{
+		if(pRoot==NULL)
+			return false;
+
+		if(pRoot==N)
+			return true;
+
+		if(_FindNode(pRoot->_pLeft,N))
+			return true;
+
+		if(_FindNode(pRoot->_pRight,N))
+			return true;
+	}
+
+
+	//Node<T>* _LastAncestorNode(Node<T>* pRoot,Node<T>* N1,Node<T>* N2)
+	//{
+	//	if(pRoot==NULL)
+	//		return NULL;
+
+	//	if(!_FindNode(pRoot,N1)||!_FindNode(pRoot,N2))
+	//		return NULL;
+
+	//	if(pRoot==N1||pRoot==N2)
+	//		return pRoot;
+
+	//	bool leftN1=_FindNode(pRoot->_pLeft,N1);
+	//	bool leftN2=_FindNode(pRoot->_pLeft,N2);
+
+	//	if((leftN1&&!leftN2)||(!leftN1&&leftN2))
+	//		return pRoot;
+	//	else if(leftN1&&leftN2)
+	//		return _LastAncestorNode(pRoot->_pLeft,N1,N2);
+	//	else
+	//		return _LastAncestorNode(pRoot->_pRight,N1,N2);
+	//}
+
+
+
+	Node<T>* _LastAncestorNode(Node<T>* pRoot,Node<T>* N1,Node<T>* N2)       //后序遍历保存路径
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		stack<Node<T>*> s1;
+		stack<Node<T>*> s2;
+
+		s1.push(pRoot);
+		s2.push(pRoot);
+		Node<T>* pcur=pRoot;
+		Node<T>* pre=NULL;
+		while(!s1.empty())
+		{
+			while(pcur)
+			{
+				if(pcur!=s1.top())
+					s1.push(pcur);
+				pcur=pcur->_pLeft;
+			}
+
+			pcur=s1.top();
+			if(pcur->_pRight==NULL||pcur->_pRight==pre)
+			{
+				if(pcur==N1)
+					break;
+				else
+				{
+					s1.pop();
+					pre=pcur;
+					pcur=NULL;
+				}
+
+			}
+			else
+			{
+				pcur=pcur->_pRight;
+			}
+		}
+
+		pcur=pRoot;
+		pre=NULL;
+		while(!s2.empty())
+		{
+			while(pcur)
+			{
+				if(pcur!=s2.top())
+					s2.push(pcur);
+				pcur=pcur->_pLeft;
+			}
+
+			pcur=s2.top();
+			if(pcur->_pRight==NULL||pcur->_pRight==pre)
+			{
+				if(pcur==N2)
+					break;
+				else
+				{
+					s2.pop();
+					pre=pcur;
+					pcur=NULL;
+				}
+
+			}
+			else
+			{
+				pcur=pcur->_pRight;
+			}
+		}
+
+		size_t size_s1=s1.size();
+		size_t size_s2=s2.size();
+		size_t i=0;
+		if(size_s1>size_s2)
+		{
+			i=size_s1-size_s2;
+			while(i)
+			{
+				s1.pop();
+				i--;
+			}
+		}
+		if(size_s1<size_s2)
+		{
+			i=size_s2-size_s1;
+			while(i)
+			{
+				s2.pop();
+				i--;
+			}
+		}
+		
+		while(!s1.empty())
+		{
+			if(s1.top()==s2.top())
+				return s1.top();
+			s1.pop();
+			s2.pop();
+		}
+	}
+
+
+
+	void CreatBinaryTree(Node<T>*& pRoot,T* arr,size_t size,size_t& index,T invalid)
+	{
+		assert(arr);
+		
+
+		if(index<size&&arr[index]!=invalid)
+		{
+			pRoot=new Node<T>(arr[index]);
+
+			CreatBinaryTree(pRoot->_pLeft,arr,size,++index,invalid);
+
+			CreatBinaryTree(pRoot->_pRight,arr,size,++index,invalid);
+		}
+	}
+
+	Node<T>* CopyTree(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		Node<T>* _pTmp=new Node<T>(pRoot->_value);
+
+		_pTmp->_pLeft=CopyTree(pRoot->_pLeft);
+		_pTmp->_pRight=CopyTree(pRoot->_pRight);
+
+		return _pTmp;
+	}
+
+
+	void _PreOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		cout<<pRoot->_value<<" ";
+		_PreOrder(pRoot->_pLeft);
+		_PreOrder(pRoot->_pRight);
+	}
+
+
+	void _MidOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_MidOrder(pRoot->_pLeft);
+		cout<<pRoot->_value<<" ";
+		_MidOrder(pRoot->_pRight);
+	}
+	
+
+	void _LastOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_LastOrder(pRoot->_pLeft);
+		_LastOrder(pRoot->_pRight);
+		cout<<pRoot->_value<<" ";
+	}
+
+
+	void _LevelOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		queue<Node<T>*> q;
+		q.push(pRoot);
+
+		while(!q.empty())
+		{
+			Node<T>* pNode=q.front();
+
+			cout<<pNode->_value<<" ";
+				
+			Node<T>* pCur=pNode->_pLeft;
+			if(pCur)
+				q.push(pCur);
+				
+			pCur=pNode->_pRight;
+			if(pCur)
+				q.push(pCur);
+			
+			q.pop();
+		}
+	}
+
+
+	Node<T>* _FindParent(Node<T>* pRoot,Node<T>* pRet)
+	{
+		if(pRoot==NULL||pRet==pRoot)
+			return NULL;
+
+		if(pRoot->_pLeft==pRet||pRoot->_pRight==pRet)
+		{
+			return pRoot;
+		}
+		
+		Node<T>* pcur=_FindParent(pRoot->_pLeft,pRet);
+		if(pcur)
+			return pcur;
+
+		return _FindParent(pRoot->_pRight,pRet);
+
+	}
+
+
+
+	Node<T>* _Find(Node<T>* pRoot,const T& data)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		if(pRoot->_value==data)
+			return pRoot;
+
+		Node<T>* pcur=_Find(pRoot->_pLeft,data);
+		if(pcur)
+			return pcur;
+
+		return _Find(pRoot->_pRight,data);
+	}
+
+	void Destory(Node<T>*& pRoot)
+	{
+		if(pRoot)
+		{
+			Destory(pRoot->_pLeft);
+			Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+private:
+	Node<T>* _pRoot;
+};
