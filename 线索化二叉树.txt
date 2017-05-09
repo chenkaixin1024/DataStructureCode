@@ -1,0 +1,294 @@
+#include <iostream>
+using namespace std;
+#include <assert.h>
+
+enum PointIhfo{LINK,THREAD};
+
+template<class T>
+struct Node
+{
+	Node(const T value)
+		:_value(value)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+		,_parent(NULL)
+		,_LeftThread(LINK)
+		,_RightThread(LINK)
+	{}
+
+
+	T _value;
+	Node<T>* _pLeft;
+	Node<T>* _pRight;
+	Node<T>* _parent;
+	PointIhfo _LeftThread;
+	PointIhfo _RightThread;
+	int _count;
+};
+
+
+template<class T>
+class BinaryTree_Thr
+{
+public:
+	BinaryTree_Thr(T arr[],size_t size,T invalid)
+	{
+		size_t index=0;
+		_CreatTree(_pRoot,arr,size,invalid,index);
+	}
+
+	
+	void PreThread()
+	{
+		Node<T>* prev = NULL;
+		_PreThread(_pRoot, prev);
+	}
+
+	void InThread()
+	{
+		Node<T>* prev = NULL;
+		_InThread(_pRoot, prev);
+	}
+
+	void PostThread()
+	{
+		Node<T>* prev = NULL;
+		_PostThread(_pRoot, prev);
+	}
+
+	void PreOrder()
+	{
+		_PreOrder(_pRoot);
+	}
+	void InOrder()
+	{
+		_InOrder(_pRoot);
+	}
+    void PostOrder()
+	{
+		_PostOrder(_pRoot);
+	}
+
+	~BinaryTree_Thr()
+	{
+		Destory(_pRoot);
+	}
+
+
+private:
+	void _PreOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		Node<T>* pcur=pRoot;
+		while(pcur)
+		{
+			while(pcur->_LeftThread==LINK)
+			{
+				cout<<pcur->_value<<" ";
+				pcur=pcur->_pLeft;
+			}
+
+			//cout<<pcur->_value<<" ";
+			//pcur=pcur->_pRight;
+
+			if(pcur->_RightThread==LINK)
+			{
+				cout<<pcur->_value<<" ";
+				pcur=pcur->_pRight;
+			}
+			else
+			{
+				while(pcur->_RightThread==THREAD)
+				{
+					cout<<pcur->_value<<" ";
+					pcur=pcur->_pRight;
+				}
+			}
+		}
+	}
+
+
+	void _InOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		Node<T>* pcur=pRoot;
+		while(pcur)
+		{
+			while(pcur->_LeftThread==LINK)
+			{
+				pcur=pcur->_pLeft;
+			}
+
+			cout<<pcur->_value<<" ";
+
+			while(pcur->_RightThread==THREAD)
+			{
+				pcur=pcur->_pRight;
+				cout<<pcur->_value<<" ";
+			}
+			
+			pcur=pcur->_pRight;
+		}
+
+	}
+
+
+	void _PostOrder(Node<T>* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		Node<T>* pcur=pRoot;
+		Node<T>* pre=NULL;
+		while(pcur)
+		{
+			while(pcur->_LeftThread==LINK)
+			{
+				pcur=pcur->_pLeft;
+			}
+
+			while(pcur->_RightThread==THREAD)
+			{
+				cout<<pcur->_value<<" ";
+				pre=pcur;
+				pcur=pcur->_pRight;
+			}
+
+			if(pcur==pRoot&&pcur->_pRight==NULL)
+			{
+				cout<<pcur->_value<<" ";
+				return ;
+			}
+
+			while(pcur&&pcur->_pRight==pre)
+			{
+				cout<<pcur->_value<<" ";
+				pre=pcur;
+				pcur=pcur->_parent;
+			}
+
+
+			if(pcur&&pcur->_RightThread==LINK)
+			{
+				if(pcur->_pRight==NULL)
+					cout<<pcur->_value<<" ";
+				pcur=pcur->_pRight;
+			}
+		}
+	}
+
+
+	void _PreThread(Node<T>*& pRoot,Node<T>*& pre)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_LeftThread==LINK)
+		{
+			pRoot->_pLeft=pre;
+			pRoot->_LeftThread=THREAD;
+		}
+
+		if(pre&&pre->_pRight==NULL&&pre->_RightThread==LINK)
+		{
+			pre->_pRight=pRoot;
+			pre->_RightThread=THREAD;
+		}
+
+		pre=pRoot;
+		if(pRoot->_LeftThread==LINK)
+			_PreThread(pRoot->_pLeft,pre);
+		
+		if(pRoot->_RightThread==LINK)
+			_PreThread(pRoot->_pRight,pre);
+	}
+
+
+	void _InThread(Node<T>*& pRoot,Node<T>*& pre)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		if(pRoot->_LeftThread==LINK)
+			_InThread(pRoot->_pLeft,pre);
+
+		if(pRoot->_pLeft==NULL&&pRoot->_LeftThread==LINK)
+		{
+			pRoot->_pLeft=pre;
+			pRoot->_LeftThread=THREAD;
+		}
+		if(pre&&pre->_pRight==NULL&&pre->_RightThread==LINK)
+		{
+			pre->_pRight=pRoot;
+			pre->_RightThread=THREAD;
+		}
+		pre=pRoot;
+
+		if(pRoot->_RightThread==LINK)
+			_InThread(pRoot->_pRight,pre);
+	}
+
+
+	void _PostThread(Node<T>*& pRoot,Node<T>*& pre)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		if(pRoot->_LeftThread==LINK)
+			_PostThread(pRoot->_pLeft,pre);
+		if(pRoot->_RightThread==LINK)
+			_PostThread(pRoot->_pRight,pre);
+
+		if(pRoot->_pLeft==NULL&&pRoot->_LeftThread==LINK)
+		{
+			pRoot->_pLeft=pre;
+			pRoot->_LeftThread=THREAD;
+		}
+
+		if(pre&&pre->_pRight==NULL&&pre->_RightThread==LINK)
+		{
+			pre->_pRight=pRoot;
+			pre->_RightThread=THREAD;
+		}
+
+		pre=pRoot;
+	}
+
+
+	void _CreatTree(Node<T>*& pRoot,T arr[],size_t size,T invalid,size_t& index)
+	{
+		assert(arr);
+
+		if(index<size&&arr[index]!=invalid)
+		{
+			pRoot=new Node<T>(arr[index]);
+			_CreatTree(pRoot->_pLeft,arr,size,invalid,++index);
+			if(pRoot->_pLeft)
+				pRoot->_pLeft->_parent=pRoot;
+			_CreatTree(pRoot->_pRight,arr,size,invalid,++index);
+			if(pRoot->_pRight)
+				pRoot->_pRight->_parent=pRoot;
+		}
+	}
+
+
+
+	void Destory(Node<T>*& pRoot)
+	{
+		if(pRoot)
+		{
+			if(pRoot->_LeftThread==LINK)
+				Destory(pRoot->_pLeft);
+			if(pRoot->_RightThread==LINK)
+				Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+private:
+	Node<T>* _pRoot;
+};
