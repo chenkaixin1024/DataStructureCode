@@ -1,0 +1,143 @@
+template<class T>
+struct Less
+{
+	bool operator()(const T& left,const T& right)
+	{
+		return left<right;
+	}
+};
+
+template<class T>
+struct Greater
+{
+	bool operator()(const T& left,const T& right)
+	{
+		return left>right;
+	}
+};
+
+template<class T,class Compare=Less<T>>
+class Heap
+{
+public:
+	Heap()
+	{}
+
+	Heap(T arr[],size_t size)
+	{
+		v.resize(size);
+		for(size_t i=0;i<size;i++)
+		{
+			v[i]=arr[i];
+		}
+		int root=(size-1)>>1;
+		for(;root>=0;root--)
+		{
+			_Adjustdown(root);
+		}
+	}
+
+	void Insert(const T& data)
+	{
+		v.push_back(data);
+		_Adjustup();
+	}
+
+	void DeleteTop()
+	{
+		int size=v.size();
+		swap(v[0],v[size-1]);
+		v.pop_back();
+		_Adjustdown(0);
+	}
+
+	size_t size()const
+	{
+		return v.size();
+	}
+
+	bool empty()const
+	{
+		return v.empty();
+	}
+
+	const T& Top()const
+	{
+		return v[0];
+	}
+
+private:
+	void _Adjustdown(int parent)
+	{
+		int child=parent*2+1;
+		int size=v.size();
+		while(child<size)
+		{
+			if(child+1<size&&Compare()(v[child+1],v[child]))
+				child+=1;
+			if(Compare()(v[child],v[parent]))
+				swap(v[parent],v[child]);
+			parent=child;
+			child=parent*2+1;
+		}
+	}
+
+	void _Adjustup()
+	{
+		int size=v.size();
+		int child=size-1;
+		int parent=(child-1)>>1;
+		while(parent>=0)
+		{
+			if(Compare()(v[parent],v[child]))
+				return ;
+			swap(v[child],v[parent]);
+			child=parent;
+			parent=(child-1)>>1;
+		}
+	}
+private:
+	vector<T> v;
+};
+
+
+template<class T>
+class PriorityQueue
+{
+public:
+	PriorityQueue(T arr[],size_t size)
+	{
+		for(size_t i=0;i<size;i++)
+		{
+			hp.Insert(arr[i]);
+		}
+	}
+
+	void Push(const T& data)
+	{
+		hp.Insert(data);
+	}
+
+	void Pop()
+	{
+		hp.DeleteTop();
+	}
+
+	size_t size()const
+	{
+		return hp.size();
+	}
+
+	bool empty()const
+	{
+		return hp.empty();
+	}
+
+	const T& Top()const
+	{
+		return hp.Top();
+	}
+
+private:
+	Heap<T,Greater<T>> hp;
+};
