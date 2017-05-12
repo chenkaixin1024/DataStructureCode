@@ -1,0 +1,209 @@
+-----------------------------Heap.h-------------------------------------
+#pragma once
+
+#include <iostream>
+using namespace std;
+#include <vector>
+
+template<class T>
+struct Less
+{
+	bool operator()(const T& left,const T& right)
+	{
+		return left<right;
+	}
+};
+
+template<class T>
+struct Greater
+{
+	bool operator()(const T& left,const T& right)
+	{
+		return left>right;
+	}
+};
+
+template<class T,class Compare=Less<T>>
+class Heap
+{
+public:
+	Heap()
+	{}
+
+	Heap(T arr[],size_t size)
+	{
+		v.resize(size);
+		for(size_t i=0;i<size;i++)
+		{
+			v[i]=arr[i];
+		}
+		int root=(size-1)>>1;
+		for(;root>=0;root--)
+		{
+			_Adjustdown(root);
+		}
+	}
+
+	void Insert(const T& data)
+	{
+		v.push_back(data);
+		_Adjustup();
+	}
+
+	void DeleteTop()
+	{
+		int size=v.size();
+		swap(v[0],v[size-1]);
+		v.pop_back();
+		_Adjustdown(0);
+	}
+
+	size_t size()const
+	{
+		return v.size();
+	}
+
+	bool empty()const
+	{
+		return v.empty();
+	}
+
+	const T& Top()const
+	{
+		return v[0];
+	}
+
+private:
+	void _Adjustdown(int parent)
+	{
+		int child=parent*2+1;
+		int size=v.size();
+		while(child<size)
+		{
+			if(child+1<size&&Compare()(v[child+1],v[child]))
+				child+=1;
+			if(Compare()(v[child],v[parent]))
+				swap(v[parent],v[child]);
+			parent=child;
+			child=parent*2+1;
+		}
+	}
+
+	void _Adjustup()
+	{
+		int size=v.size();
+		int child=size-1;
+		int parent=(child-1)>>1;
+		while(parent>=0)
+		{
+			if(Compare()(v[parent],v[child]))
+				return ;
+			swap(v[child],v[parent]);
+			child=parent;
+			parent=(child-1)>>1;
+		}
+	}
+private:
+	vector<T> v;
+};
+
+
+------------------------------------------------------------------------
+#include "Heap.h"
+
+template<class T>
+struct Node
+{
+	Node(const T& weight)
+		:_weight(weight)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+		,_parent(NULL)
+	{}
+
+
+	T _weight;
+	Node<T>* _pLeft;
+	Node<T>* _pRight;
+	Node<T>* _parent;
+};
+
+template<class T>
+class HuffmanTree
+{
+public:
+	HuffmanTree()
+		:_pRoot(NULL)
+	{}
+
+	HuffmanTree(T arr[], size_t size, const T& invalid)
+	{
+		_pRoot=_CreatTree(arr,size,invalid);
+	}
+
+	const Node<T>* Root()const
+	{
+		return _pRoot;
+	}
+
+	~HuffmanTree()
+	{
+		Destory(_pRoot);
+	}
+
+
+private:
+	Node<T>* _CreatTree(T arr[],size_t size,const T& invalid)
+	{
+		struct Com
+		{
+			bool operator()(Node<T>*& left,Node<T>*& right)
+			{
+				return (left->_weight<right->_weight);
+			}
+		};
+
+		Heap<Node<T>*,Com> hp;
+		for(size_t i=0;i<size;i++)
+		{
+			if(arr[i]!=invalid)
+			{
+				Node<T>* pNode=new Node<T>(arr[i]);
+				hp.Insert(pNode);
+			}
+		}
+
+		while(hp.size()>1)
+		{
+			Node<T>* pRight=hp.Top();
+			hp.DeleteTop();
+			
+			Node<T>* pLeft=hp.Top();
+			hp.DeleteTop();
+			
+			Node<T>* parent=new Node<T>(pRight->_weight+pLeft->_weight);
+			
+			parent->_pLeft=pLeft;
+			parent->_pRight=pRight;
+			pLeft->_parent=parent;
+			pRight->_parent=parent;
+
+			hp.Insert(parent);
+		}
+
+		return hp.Top();
+	}
+
+	void Destory(Node<T>* pRoot)
+	{
+		if(pRoot)
+		{
+			Destory(pRoot->_pLeft);
+			Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+private:
+	Node<T>* _pRoot;
+};
