@@ -1,0 +1,331 @@
+#pragma once
+
+#include <iostream>
+using namespace std;
+
+
+template<class K,class V>
+struct Node
+{
+	Node(const K& key,const V& value)
+		:_key(key)
+		,_value(value)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+	{}
+
+
+	K _key;
+	V _value;
+	Node<K,V>* _pLeft;
+	Node<K,V>* _pRight;
+};
+
+
+template<class K,class V>
+class BinarySearchTree
+{
+	typedef Node<K,V> Node;
+public:
+	BinarySearchTree()
+		:_pRoot(NULL)
+	{}
+
+	BinarySearchTree(const BinarySearchTree<K,V>& bst)
+	{
+		_pRoot=_CopyTree(bst._pRoot);
+	}
+	BinarySearchTree<K, V>& operator=(const BinarySearchTree<K, V>& bst)
+	{
+		if(this!=&bst)
+		{
+			Destory(_pRoot);
+			_pRoot=_CopyTree(bst._pRoot);
+		}
+
+		return *this;
+	}
+	~BinarySearchTree()
+	{
+		Destory(_pRoot);
+	}
+
+	Node* Find(const K& key)
+	{
+		return _Find(_pRoot,key);
+	}
+
+	bool Insert(const K& key, const V& value)
+	{
+		return _Insert(_pRoot,key,value);
+	}
+	bool Remove(const K& key)
+	{
+		return _Remove(_pRoot,key);
+	}
+
+	void InOrder()
+	{
+		cout<<"InOrder: ";
+		_InOrder(_pRoot);
+		cout<<endl;
+	}
+
+	const K& GetMaxKey()const
+	{
+		Node* pcur=_pRoot;
+		while(pcur->_pRight)
+			pcur=pcur->_pRight;
+		return pcur->_key;
+	}
+	const K& GetMinKey()const
+	{
+		Node* pcur=_pRoot;
+		while(pcur->_pLeft)
+			pcur=pcur->_pLeft;
+		return pcur->_key;
+	}
+
+protected:
+	Node* _CopyTree(Node* pRoot)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		Node* ptmp=new Node(pRoot->_key,pRoot->_value);
+		ptmp->_pLeft=_CopyTree(pRoot->_pLeft);
+		ptmp->_pRight=_CopyTree(pRoot->_pRight);
+
+		return ptmp;
+	}
+
+	void Destory(Node*& pRoot)
+	{
+		if(pRoot)
+		{
+			Destory(pRoot->_pLeft);
+			Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+	//·ÇµÝ¹é
+	//Node* _Find(Node* pRoot,const K& key)
+	//{
+	//	if(pRoot==NULL)
+	//		return NULL;
+
+	//	while(pRoot)
+	//	{
+	//		if(key<pRoot->_key)
+	//		{
+	//			pRoot=pRoot->_pLeft;
+	//		}
+	//		else if(key>pRoot->_key)
+	//		{
+	//			pRoot=pRoot->_pRight;
+	//		}
+	//		else
+	//			return pRoot;
+	//	}
+
+	//	return NULL;
+	//}
+
+	//bool _Insert(Node*& pRoot,const K& key,const V& value)
+	//{
+	//	if(pRoot==NULL)
+	//	{
+	//		pRoot=new Node(key,value);
+	//		return true;
+	//	}
+
+	//	Node* pcur=pRoot;
+	//	Node* parent=NULL;
+	//	while(pcur)
+	//	{
+	//		if(pcur->_key==key)
+	//			return false;
+	//		else if(key<pcur->_key)
+	//		{
+	//			parent=pcur;
+	//			pcur=pcur->_pLeft;
+	//		}
+	//		else
+	//		{
+	//			parent=pcur;
+	//			pcur=pcur->_pRight;
+	//		}
+	//	}
+
+	//	pcur=new Node(key,value);
+	//	if(key<parent->_key)
+	//		parent->_pLeft=pcur;
+	//	else
+	//		parent->_pRight=pcur;
+
+	//	return true;
+	//}
+
+	//bool _Remove(Node*& pRoot,const K& key)
+	//{
+	//	if(pRoot==NULL)
+	//		return false;
+
+	//	Node* pcur=pRoot;
+	//	Node* parent=NULL;
+	//	while(pcur)
+	//	{
+	//		if(key<pcur->_key)
+	//		{
+	//			parent=pcur;
+	//			pcur=pcur->_pLeft;
+	//		}
+	//		else if(key>pcur->_key)
+	//		{
+	//			parent=pcur;
+	//			pcur=pcur->_pRight;
+	//		}
+	//		else
+	//		{
+	//			if(pcur->_pLeft==NULL)
+	//			{
+	//				if(pcur==pRoot)
+	//					pRoot=pcur->_pRight;
+
+	//				else if(pcur==parent->_pLeft)
+	//					parent->_pLeft=pcur->_pRight;
+	//				else
+	//					parent->_pRight=pcur->_pRight;
+	//			}
+	//			else if(pcur->_pRight==NULL)
+	//			{
+	//				if(pcur==pRoot)
+	//					pRoot=pcur->_pLeft;
+
+	//				else if(pcur==parent->_pLeft)
+	//					parent->_pLeft=pcur->_pLeft;
+	//				else
+	//					parent->_pRight=pcur->_pLeft;
+	//			}
+	//			else
+	//			{
+	//				Node* pDel=pcur;
+	//				parent=pcur;
+	//				pDel=pDel->_pRight;
+	//				while(pDel->_pLeft)
+	//				{
+	//					parent=pDel;
+	//					pDel=pDel->_pLeft;
+	//				}
+	//				pcur->_key=pDel->_key;
+	//				pcur->_value=pDel->_value;
+
+	//				if(pDel==parent->_pLeft)
+	//				{
+	//					parent->_pLeft=pDel->_pRight;
+	//				}
+	//				else
+	//				{
+	//					parent->_pLeft=pDel->_pRight;
+	//				}
+
+	//				pcur=pDel;
+	//			}
+
+	//			delete pcur;
+	//			return true;
+	//		}
+	//	}
+
+	//	return false;
+	//}
+
+
+	//µÝ¹é
+	Node* _Find(Node* pRoot,const K& key)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		if(pRoot->_key==key)
+			return pRoot;
+		else if(key<pRoot->_key)
+			return _Find(pRoot->_pLeft,key);
+		else
+			return _Find(pRoot->_pRight,key);
+	}
+
+	bool _Insert(Node*& pRoot,const K& key,const V& value)
+	{
+		if(pRoot==NULL)
+		{
+			pRoot=new Node(key,value);
+			return true;
+		}
+
+		if(pRoot->_key==key)
+			return false;
+		
+		if(key<pRoot->_key)
+			return _Insert(pRoot->_pLeft,key,value);
+		else
+			return _Insert(pRoot->_pRight,key,value);
+	}
+
+
+	bool _Remove(Node*& pRoot,const K& key)
+	{
+		if(pRoot==NULL)
+			return false;
+		
+		if(key<pRoot->_key)
+			return _Remove(pRoot->_pLeft,key);
+		else if(key>pRoot->_key)
+			return _Remove(pRoot->_pRight,key);
+		else
+		{
+			Node* pcur=pRoot;
+			if(pcur->_pLeft==NULL)
+			{
+				pRoot=pcur->_pRight;
+				delete pcur;
+			}
+			else if(pcur->_pRight==NULL)
+			{
+				pRoot=pcur->_pLeft;
+				delete pcur;
+			}
+			else
+			{
+				Node* pDel=pRoot;
+				pcur=pcur->_pRight;
+				while(pcur->_pLeft)
+				{
+					pcur=pcur->_pLeft;
+				}
+				pDel->_key=pcur->_key;
+				pDel->_value=pcur->_value;
+				_Remove(pRoot->_pRight,pcur->_key);
+
+			}
+			return true;
+		}
+	}
+
+
+	void _InOrder(Node* pRoot)
+	{
+		if(pRoot)
+		{
+			_InOrder(pRoot->_pLeft);
+			cout<<pRoot->_key<<" ";
+			_InOrder(pRoot->_pRight);
+		}
+	}
+
+
+
+private:
+	Node* _pRoot;
+};
