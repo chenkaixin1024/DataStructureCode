@@ -1,0 +1,196 @@
+#include <iostream>
+using namespace std;
+#include <assert.h>
+//#include <algorithm>
+
+
+int Sum(int n)
+{
+	if(n==1)
+		return 1;
+	return n+Sum(n-1);
+}
+
+int Factorial(int n)
+{
+	if(n==1)
+		return 1;
+	return n*Factorial(n-1);
+}
+
+struct Node
+{
+	Node* _next;
+	int value;
+};
+
+void  ReversedPrint(Node* pHead)
+{
+	if(pHead==NULL)
+		return ;
+
+	if(pHead)
+	{
+		ReversedPrint(pHead->_next);
+		cout<<pHead->value<<" ";
+	}
+
+}
+
+
+void Destory(Node*& pHead)
+{
+	if(pHead==NULL)
+		return ;
+
+	if(pHead)
+	{
+		Destory(pHead->_next);
+		pHead=NULL;
+	}
+}
+
+
+Node* ReversedFind(Node* pHead,int data)
+{
+	if(pHead)
+	{
+		Node* pcur=ReversedFind(pHead->_next,data);
+		if(pcur)
+			return pcur;
+		else
+		{
+			if(pHead->value==data)
+				return pHead;
+		}
+	}
+	else
+		return NULL;
+}
+
+
+
+int BinarySearch(int* arr,int left,int right,int data)
+{
+	assert(arr);
+
+	if(left<=right)
+	{
+		int mid=(left&right)+((left^right)>>1);
+		if(arr[mid]==data)
+		{
+			return mid;
+		}
+		else if(arr[mid]>data)
+		{
+			return BinarySearch(arr,left,mid-1,data);
+		}
+		else
+		{
+			return BinarySearch(arr,mid+1,right,data);
+		}
+	}
+	else
+		return -1;
+}
+
+
+void ReversePrintArray(int* arr,int size)
+{
+	assert(arr);
+
+	if(size!=0)
+	{
+		cout<<arr[size-1]<<" ";
+		ReversePrintArray(arr,size-1);
+	}
+	else
+		cout<<endl;
+}
+
+
+bool IsPalindereme(char* str,int left,int right)
+{
+	assert(str);
+
+	if(left<right)
+	{
+		if(str[left]==str[right])
+		{
+			return IsPalindereme(str,left+1,right-1);
+		}
+		else
+			return false;
+	}
+	else
+		return true;
+}
+
+
+void Print(int* arr,int size)
+{
+	for(int i=0;i<size;i++)
+	{
+		cout<<arr[i]<<" ";
+	}
+	cout<<endl;
+}
+
+void Perm(int* arr,int size,int n)
+{
+	assert(arr);
+	
+	if(n<size)
+	{
+		for(int i=n;i<size;i++)
+		{
+			swap(arr[n],arr[i]);
+			//Print(arr,size);
+			Perm(arr,size,n+1);
+			swap(arr[n],arr[i]);
+		}
+	}
+	else
+	{
+		Print(arr,size);
+	}
+}
+
+int main()
+{
+	//cout<<Sum(100)<<endl;
+	//cout<<Factorial(6)<<endl;
+	//Node n1,n2,n3;
+	//n1.value=1;
+	//n2.value=2;
+	//n3.value=3;
+
+	//n1._next=&n2;
+	//n2._next=&n3;
+	//n3._next=NULL;
+	//ReversedPrint(&n1);
+
+	//Node* p=&n1;
+	//Node* ret=ReversedFind(p,1);
+	//cout<<ret->value<<endl;
+	//Destory(p);
+	//ReversedPrint(p);
+
+
+	//int arr[]={1,2,3,4,5,6,7,8,9};
+	//cout<<BinarySearch(arr,0,8,9)<<endl;
+	//cout<<BinarySearch(arr,0,8,1)<<endl;
+	//cout<<BinarySearch(arr,0,8,3)<<endl;
+	//cout<<BinarySearch(arr,0,8,20)<<endl;
+	//cout<<BinarySearch(arr,0,8,0)<<endl;
+
+	//ReversePrintArray(arr,9);
+
+	//char* str="abba";
+	//cout<<IsPalindereme(str,0,3)<<endl;
+
+	int arr[]={1,2,3,4,5};
+	Perm(arr,5,1);
+
+	return 0;
+}
