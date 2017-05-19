@@ -1,0 +1,499 @@
+template<class K,class V>
+struct Node
+{
+	Node()
+	{}
+
+	Node(const K& key,const V& value)
+		:_key(key)
+		,_value(value)
+		,_parent(NULL)
+		,_pLeft(NULL)
+		,_pRight(NULL)
+	{}
+
+
+	K _key;
+	V _value;
+	Node<K,V>* _parent;
+	Node<K,V>* _pLeft;
+	Node<K,V>* _pRight;
+};
+
+
+//迭代器
+template<class K,class V,class Ref,class Ptr>
+class BstIterator
+{
+	typedef Node<K,V> Node;
+	typedef BstIterator<K,V,Ref,Ptr> Self;
+public:
+	BstIterator()
+		:_pNode(NULL)
+	{}
+
+	BstIterator(Node* pNode)
+		:_pNode(pNode)
+	{}
+
+	BstIterator(const Self& s)
+	{
+		_pNode=s._pNode;
+	}
+
+	Self& operator++()
+	{
+		Increase(_pNode);
+		return *this;
+	}
+
+	Self operator++(int)
+	{
+		Self tmp(*this);
+		Increase(_pNode);
+		return tmp;
+	}
+
+	Self& operator--()
+	{
+		Decrease(_pNode);
+		return *this;
+	}
+
+	Self operator--(int)
+	{
+		Self tmp(*this);
+		Decrease(_pNode);
+		return tmp;
+	}
+
+	Ref operator*()
+	{
+		return _pNode->_key;
+	}
+
+	Ptr operator->()
+	{
+		return _pNode;
+	}
+
+	bool operator!=(const Self& s)
+	{
+		return (_pNode!=s._pNode);
+	}
+
+	bool operator==(const Self& s)
+	{
+		return !(*this!=s);
+	}
+
+private:
+	void Increase(Node*& pNode)
+	{
+		assert(pNode);
+
+		if(pNode->_pRight)
+		{
+			pNode=pNode->_pRight;
+			while(pNode->_pLeft)
+			{
+				pNode=pNode->_pLeft;
+			}
+		}
+		else
+		{
+			Node* parent=pNode->_parent;
+			while(pNode==parent->_pRight)
+			{
+				pNode=parent;
+				parent=pNode->_parent;
+			}
+			if(pNode->_pRight!=parent)
+			{
+				pNode=parent;
+			}
+		}
+	}
+
+	void Decrease(Node*& pNode)
+	{
+		assert(pNode);
+
+		if(pNode->_pLeft)
+		{
+			pNode=pNode->_pLeft;
+			while(pNode->_pRight)
+			{
+				pNode=pNode->_pRight;
+			}
+		}
+		else
+		{
+			Node* parent=pNode->_parent;
+			while(pNode==parent->_pLeft)
+			{
+				pNode=parent;
+				parent=pNode->_parent;
+			}
+			pNode=parent;
+		}
+	}
+
+private:
+	Node* _pNode;
+};
+
+
+template<class K,class V>
+class BinarySearchTree
+{
+	typedef Node<K,V> Node;
+	typedef BstIterator<K,V,K,Node*> BstIterator;
+public:
+	BinarySearchTree()
+	{
+		_pHead=new Node;
+		_pHead->_pLeft=_pHead;
+		_pHead->_pRight=_pHead;
+		_pHead->_parent=NULL;
+	}
+
+	BinarySearchTree(const BinarySearchTree<K,V>& bst)
+	{
+		Node* pRoot=GetRoot();
+		pRoot=_CopyTree(bst._pHead);
+	}
+
+	BinarySearchTree<K, V>& operator=(const BinarySearchTree<K, V>& bst)
+	{
+		if(this!=&bst)
+		{
+			Node* pRoot=GetRoot();
+			Destory(pRoot);
+			pRoot=_CopyTree(bst._pHead);
+		}
+
+		return *this;
+	}
+
+	BstIterator Begin()
+	{
+		BstIterator it(MostLeft());
+		return it;
+	}
+
+	BstIterator End()
+	{
+		BstIterator it(_pHead);
+		return it;
+	}
+
+	~BinarySearchTree()
+	{
+		Node* pRoot=GetRoot();
+		Destory(pRoot);
+		delete _pHead;
+	}
+
+	Node* Find(const K& key)
+	{
+		Node* pRoot=GetRoot();
+		return _Find(pRoot,key);
+	}
+
+	bool Insert(const K& key, const V& value)
+	{
+		return _Insert(_pHead,key,value);
+	}
+	bool Remove(const K& key)
+	{
+		return _Remove(_pHead,key);
+	}
+
+	void InOrder()
+	{
+		Node* pRoot=GetRoot();
+		cout<<"InOrder: ";
+		_InOrder(pRoot);
+		cout<<endl;
+	}
+
+	const K& GetMaxKey()const
+	{
+		Node* pcur=GetRoot();
+		while(pcur->_pRight)
+			pcur=pcur->_pRight;
+		return pcur->_key;
+	}
+	const K& GetMinKey()const
+	{
+		Node* pcur=GetRoot();
+		while(pcur->_pLeft)
+			pcur=pcur->_pLeft;
+		return pcur->_key;
+	}
+
+	//转换成有序双向链表
+	Node* ToList()
+	{
+		Node* pRoot=GetRoot();
+		Node* pre=NULL;
+		_ToList(pRoot,pre);
+		return MostLeft();
+	}
+
+protected:
+	void _ToList(Node* pRoot,Node*& pre)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_ToList(pRoot->_pLeft,pre);
+
+		pRoot->_pLeft=pre;
+		if(pre)
+			pre->_pRight=pRoot;
+		pre=pRoot;
+
+		_ToList(pRoot->_pRight,pre);
+	}
+
+
+	Node* GetRoot()
+	{
+		return _pHead->_parent;
+	}
+
+	Node* MostLeft()
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+			return NULL;
+		while(pRoot->_pLeft)
+		{
+			pRoot=pRoot->_pLeft;
+		}
+		return pRoot;
+	}
+
+	Node* MostRight()
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+			return NULL;
+		while(pRoot->_pRight)
+		{
+			pRoot=pRoot->_pRight;
+		}
+		return pRoot;
+	}
+
+	Node* _CopyTree(Node* pHead)
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+			return NULL;
+
+		Node* ptmp=new Node(pRoot->_key,pRoot->_value);
+		ptmp->_pLeft=_CopyTree(pRoot->_pLeft);
+		ptmp->_pRight=_CopyTree(pRoot->_pRight);
+
+		return ptmp;
+	}
+
+	void Destory(Node*& pRoot)
+	{
+		if(pRoot)
+		{
+			Destory(pRoot->_pLeft);
+			Destory(pRoot->_pRight);
+			delete pRoot;
+		}
+	}
+
+	Node* _Find(Node* pRoot,const K& key)
+	{
+		if(pRoot==NULL)
+			return NULL;
+
+		while(pRoot)
+		{
+			if(key<pRoot->_key)
+			{
+				pRoot=pRoot->_pLeft;
+			}
+			else if(key>pRoot->_key)
+			{
+				pRoot=pRoot->_pRight;
+			}
+			else
+				return pRoot;
+		}
+
+		return NULL;
+	}
+
+	bool _Insert(Node*& pHead,const K& key,const V& value)
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+		{
+			pRoot=new Node(key,value);
+			pRoot->_parent=pHead;
+			pHead->_parent=pRoot;
+		}
+		else
+		{
+			Node* pcur=pRoot;
+			Node* parent=NULL;
+			while(pcur)
+			{
+				if(pcur->_key==key)
+					return false;
+				else if(key<pcur->_key)
+				{
+					parent=pcur;
+					pcur=pcur->_pLeft;
+				}
+				else
+				{
+					parent=pcur;
+					pcur=pcur->_pRight;
+				}
+			}
+
+			pcur=new Node(key,value);
+			pcur->_parent=parent;
+			if(key<parent->_key)
+				parent->_pLeft=pcur;
+			else
+				parent->_pRight=pcur;
+		}
+		
+
+		pHead->_pLeft=MostLeft();
+		pHead->_pRight=MostRight();
+
+		return true;
+	}
+
+	bool _Remove(Node*& pHead,const K& key)
+	{
+		Node* pRoot=GetRoot();
+
+		if(pRoot==NULL)
+			return false;
+
+		Node* pcur=pRoot;
+		Node* parent=NULL;
+		while(pcur)
+		{
+			if(key<pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pLeft;
+			}
+			else if(key>pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pRight;
+			}
+			else
+			{
+				if(pcur->_pLeft==NULL)
+				{
+					if(pcur==pRoot)
+					{
+						pRoot=pcur->_pRight;
+						pHead->_parent=pRoot;
+						pRoot->_parent=pHead;
+					}
+
+					else if(pcur==parent->_pLeft)
+					{
+						parent->_pLeft=pcur->_pRight;
+						if(pcur->_pRight)
+							pcur->_pRight->_parent=parent;
+					}
+					else
+					{
+						parent->_pRight=pcur->_pRight;
+						if(pcur->_pRight)
+							pcur->_pRight->_parent=parent;
+					}
+				}
+				else if(pcur->_pRight==NULL)
+				{
+					if(pcur==pRoot)
+					{
+						pRoot=pcur->_pLeft;
+						pHead->_parent=pRoot;
+						pRoot->_parent=pHead;
+					}
+
+					else if(pcur==parent->_pLeft)
+					{
+						parent->_pLeft=pcur->_pLeft;
+						if(pcur->_pLeft)
+							pcur->_pLeft->_parent=parent;
+					}
+					else
+					{
+						parent->_pRight=pcur->_pLeft;
+						if(pcur->_pLeft)
+							pcur->_pLeft->_parent=parent;
+					}
+				}
+				else
+				{
+					Node* pDel=pcur;
+					parent=pcur;
+					pDel=pDel->_pRight;
+					while(pDel->_pLeft)
+					{
+						parent=pDel;
+						pDel=pDel->_pLeft;
+					}
+					pcur->_key=pDel->_key;
+					pcur->_value=pDel->_value;
+
+					if(pDel==parent->_pLeft)
+					{
+						parent->_pLeft=pDel->_pRight;
+					}
+					else
+					{
+						parent->_pLeft=pDel->_pRight;
+					}
+					
+					if(pDel->_pRight)
+						pDel->_pRight->_parent=parent;
+					pcur=pDel;
+				}
+
+				delete pcur;
+				
+				pHead->_pLeft=MostLeft();
+				pHead->_pRight=MostRight();
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void _InOrder(Node* pRoot)
+	{
+		if(pRoot)
+		{
+			_InOrder(pRoot->_pLeft);
+			cout<<pRoot->_key<<" ";
+			_InOrder(pRoot->_pRight);
+		}
+	}
+
+
+
+private:
+	Node* _pHead;
+};
