@@ -1,0 +1,229 @@
+#pragma once
+
+#include <iostream>
+using namespace std;
+
+template<class K,class V>
+struct Node
+{
+	Node(const K& key,const V& value)
+		:_pLeft(NULL)
+		,_pRight(NULL)
+		,_parent(NULL)
+		,_key(key)
+		,_value(value)
+		,_bf(0)
+	{}
+
+
+
+	Node<K,V>* _pLeft;
+	Node<K,V>* _pRight;
+	Node<K,V>* _parent;
+	K _key;
+	V _value;
+	int _bf;
+};
+
+
+
+template<class K,class V>
+class AVLTree
+{
+	typedef Node<K,V> Node;
+public:
+	AVLTree()
+		:_pRoot(NULL)
+	{}
+
+
+	bool IsAVLTree()
+	{
+		return _IsAVLTree(_pRoot);
+	}
+
+	bool Insert(const K& key,const V& value)
+	{ 
+		if(_pRoot==NULL)
+		{
+			_pRoot=new Node(key,value);
+			return true;
+		}
+
+		Node* pcur=_pRoot;
+		Node* parent=NULL;
+		while(pcur)
+		{
+			if(key<pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pLeft;
+			}
+			else if(key>pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pRight;
+			}
+			else
+				return false;
+		}
+
+		pcur=new Node(key,value);
+		if(key<parent->_key)
+		{
+			parent->_pLeft=pcur;
+		}
+		else
+		{
+			parent->_pRight=pcur;
+		}
+		pcur->_parent=parent;
+
+		while(pcur->_parent!=NULL)
+		{
+			if(parent->_pLeft==pcur)
+				parent->_bf--;
+			else
+				parent->_bf++;
+
+			if(abs(parent->_bf)==2)
+			{
+				if(parent->_bf==2&&pcur->_bf==1)	//×óµ¥Ðý
+					RotateL(parent);
+				else if(parent->_bf==-2&&pcur->_bf==-1)    //ÓÒµ¥Ðý
+					RotateR(parent);
+				else if(parent->_bf==-2&&pcur->_bf==1)    //ÏÈ×óÐýºóÓÒÐý
+				{
+					Node* pParent=parent;
+					Node* pSubR=parent->_pRight;
+
+					RotateL(parent->_pLeft);
+					RotateR(parent);
+				}
+				else    //ÏÈÓÒÐýºó×óÐý
+				{
+					Node* pParent=parent;
+					Node* pSubR=parent->_pRight;
+					int bf=pcur->_pLeft->_bf;
+					RotateR(parent->_pRight);
+					RotateL(parent);
+
+					if(bf==-1)
+						pSubR->_bf=1;
+					else
+						pParent->_bf=-1;
+				}
+
+				break;
+			}
+			else
+			{
+				pcur=parent;
+				parent=pcur->_parent;
+			}
+		}
+
+		return true;
+	}
+
+	void Inorder()
+	{
+		_Inorder(_pRoot);
+		cout<<endl;
+	}
+
+private:
+	void RotateL(Node* parent)    //×óÐý
+	{
+		Node* pSubR=parent->_pRight;
+		Node* pSubRL=pSubR->_pLeft;
+		Node* pparent=parent->_parent;
+
+		pSubR->_pLeft=parent;
+		parent->_parent=pSubR;
+
+		parent->_pRight=pSubRL;
+		if(pSubRL)
+			pSubRL->_parent=parent;
+
+		pSubR->_parent=pparent;
+		if(pparent==NULL)
+			_pRoot=pSubR;
+		else
+		{
+			if(pparent->_pLeft==parent)
+				pparent->_pLeft=pSubR;
+			else
+				pparent->_pRight=pSubR;
+		}
+			
+		pSubR->_bf=parent->_bf=0;
+	}
+
+	void RotateR(Node* parent)    //ÓÒÐý
+	{
+		Node* pSubL=parent->_pLeft;
+		Node* pSubLR=pSubL->_pRight;
+		Node* pparent=parent->_parent;
+
+		pSubL->_pRight=parent;
+		parent->_parent=pSubL;
+
+		parent->_pLeft=pSubLR;
+		if(pSubLR)
+			pSubLR->_parent=parent;
+
+		pSubL->_parent=pparent;
+		if(pparent==NULL)
+			_pRoot=pSubL;
+		else
+		{
+			if(pparent->_pLeft==parent)
+				pparent->_pLeft=pSubL;
+			else
+				pparent->_pRight=pSubL;
+		}
+
+		parent->_bf=pSubL->_bf=0;
+	}
+
+
+	bool _IsAVLTree(Node* pRoot)
+	{
+		if(pRoot==NULL)
+			return true;
+
+		if(pRoot->_bf!=Height(pRoot->_pRight)-Height(pRoot->_pLeft)||abs(pRoot->_bf)==2)
+		{
+			cout<<pRoot->_key<<": "<<pRoot->_bf<<endl;
+			return false;
+		}
+
+		return _IsAVLTree(pRoot->_pLeft)&&_IsAVLTree(pRoot->_pRight);
+	}
+
+
+	int Height(Node* pRoot)
+	{
+		if(pRoot==NULL)
+			return 0;
+
+		int left=Height(pRoot->_pLeft)+1;
+		int right=Height(pRoot->_pRight)+1;
+
+		return left>right?left:right;
+	}
+
+
+	void _Inorder(Node* pRoot)
+	{
+		if(pRoot==NULL)
+			return ;
+
+		_Inorder(pRoot->_pLeft);
+		cout<<pRoot->_key<<" ";
+		_Inorder(pRoot->_pRight);
+	}
+private:
+	Node* _pRoot;
+};
