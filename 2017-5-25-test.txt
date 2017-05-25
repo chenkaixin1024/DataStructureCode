@@ -1,0 +1,490 @@
+#pragma once
+
+#include "Huffman.h"
+#include <string>
+#include <io.h>
+#include <shlwapi.h> 
+#include "direct.h"
+#define BUFSIZE 5
+
+
+struct File
+{
+	File(string filename,char filetype='-')
+		:_filename(filename)
+		,_filetype(filetype)
+	{}
+
+	char _filetype;
+	string _filename;
+};
+
+
+struct StrCodeInfo
+{
+	StrCodeInfo(int StrCount=0)
+		:_StrCount(StrCount)
+	{}
+
+	//重载各种运算符，便于在构建Huffman树的时候，对节点以字符出现次数进行比较
+	bool operator!=(const StrCodeInfo& sc)
+	{
+		return _StrCount!=sc._StrCount;
+	}
+
+	bool operator<(const StrCodeInfo& sc)
+	{
+		return _StrCount<sc._StrCount;
+	}
+
+	bool operator>(const StrCodeInfo& sc)
+	{
+		return _StrCount>sc._StrCount;
+	}
+
+	StrCodeInfo operator+(const StrCodeInfo& sc)
+	{
+		StrCodeInfo tmp;
+		tmp._StrCount=_StrCount+sc._StrCount;
+		return tmp._StrCount;
+	}
+
+	unsigned char _ch;
+	int _StrCount;
+	string _StrCode;
+};
+
+class FileCompress
+{
+public:
+	FileCompress()
+	{
+		for(size_t i=0;i<256;i++)
+		{
+			strcode[i]._ch=i;
+		}
+	}
+
+	//压缩
+	void Compress(const string& OrgFilePath)
+	{
+		//获取压缩文件名（路径）
+		size_t pos=OrgFilePath.find_last_of('.');
+		string FileName=OrgFilePath.substr(0,pos);
+		string DstFilePath=FileName;
+		DstFilePath+=".hzp";
+
+
+		FILE* fOut=fopen(DstFilePath.c_str(),"wb");
+		if(fOut==NULL)
+		{
+			cout<<"fOut open default"<<endl;
+			return ;
+		}
+
+		vector<File> v_file;
+		if(IsDir(OrgFilePath.c_str()))
+		{
+			string str;
+			str+="d:";
+			str+=OrgFilePath;
+			str+='\n';
+			fwrite(str.c_str(),1,str.size(),fOut);
+			GetFiles(OrgFilePath,v_file);
+			for(size_t i=0;i<v_file.size();i++)
+			{
+				if(v_file[i]._filetype=='d')
+				{
+					string dir;
+					dir+="d:";
+					dir+=v_file[i]._filename;
+					dir+='\n';
+					fwrite(dir.c_str(),1,dir.size(),fOut);
+				}
+				else
+				{
+					CompressFile(v_file[i]._filename,fOut);
+				}
+			}
+		}
+		else
+		{
+			CompressFile(OrgFilePath,fOut);
+		}
+
+		fclose(fOut);
+	}
+
+
+
+	//压缩文件
+	void CompressFile(const string& OrgFilePath,FILE*& fOut)
+	{
+		FILE* fIn=fopen(OrgFilePath.c_str(),"rb");
+		if(fIn==NULL)
+		{
+			cout<<"fIn open fault\n"<<endl;
+			return ;
+		}
+
+		char* ReadBuf=new char[BUFSIZE];//为提高效率，一次从文件中读取1024个字符（当然若字符数不足1024，则仅读取对应字符数的字符）
+		while(1)
+		{
+			int readnum=fread(ReadBuf,1,BUFSIZE,fIn);
+			if(readnum==0)
+				break;
+
+			int idx=0;
+			for(int i=0;i<readnum;i++)
+			{
+				strcode[(unsigned char)ReadBuf[i]]._StrCount++;//统计字符出现次数
+			}
+		}
+
+		HuffmanTree<StrCodeInfo> ht(strcode,256,StrCodeInfo(0));//构建Huffman树（以字符出现次数作为大小比较的依据）
+		Node<StrCodeInfo>* pRoot=ht.Root();
+		//获取对应编码
+		_GetCode(pRoot,strcode,sizeof(strcode)/sizeof(strcode[0]));
+		
+		//获取原文件路径
+		//size_t pos=OrgFilePath.find_last_of('.');
+		//string FileName=OrgFilePath.substr(0,pos);
+		//获取原文件后缀----作为压缩文件头部信息便于解压获取对应文件
+		//string FileSuffix=OrgFilePath.substr(pos,OrgFilePath.size());
+		//FileSuffix+='\n';
+		//string DstFilePath=FileName;
+		//DstFilePath+=".hzp";
+
+		//FILE* fOut=fopen(DstFilePath.c_str(),"wb");
+		//if(fOut==NULL)
+		//{
+		//	cout<<"fOut open default"<<endl;
+		//	return ;
+		//}
+		string DstFilePath=OrgFilePath;
+		DstFilePath+='\n';
+		fwrite(DstFilePath.c_str(),DstFilePath.size(),1,fOut);
+		
+		//获取压缩信息中出现的字符及其出现次数，以及总共的字符数（将其作为行数保存，来区分压缩信息与头部保存的额外信息）
+		int line=0;
+		string str;
+		for(size_t i=0;i<256;i++)
+		{
+			if(strcode[i]._StrCount)
+			{
+				str+=strcode[i]._ch;
+				str+=':';
+				char strcount[10];
+				itoa(strcode[i]._StrCount,strcount,10);
+				str+=strcount;
+				str+='\n';
+				line++;
+			}
+		}
+		
+		
+		string s;
+		char sline[10];
+		itoa(line,sline,10);
+		s+=sline;
+		s+='\n';
+		s+=str;
+		fwrite(s.c_str(),s.size(),1,fOut);
+
+
+		fseek(fIn,0,0);
+		char* WriteBuf=new char[BUFSIZE];//同理ReadBuf
+		
+		char value=0;
+		size_t count=0;
+		size_t idx=0;
+		while(1)
+		{
+			int readnum=fread(ReadBuf,1,BUFSIZE,fIn);
+			if(readnum==0)
+				break;
+			for(int i=0;i<readnum;i++)
+			{
+				string code=strcode[(unsigned char)ReadBuf[i]]._StrCode;//查找对应字符编码
+				size_t index=0;
+				//用对应字符编码改写文件（按字节改写）
+				while(index<code.size())
+				{
+					//先将value左移，防止在一个字符编完码之后，在编下一个字符码时，对value信息进行覆盖（而左移的目的是因为先改写的编码是应该放在字节左边的）
+					value<<=1;
+					if(code[index++]=='1')
+						value|=1;
+					count++;
+					if(count==8)//在完成一个字节的编码之后，将其保存至WriteBuf
+					{
+						count=0;
+						WriteBuf[idx++]=value;
+						value=0;
+						if(idx==BUFSIZE)//当WriteBuf写满后，将其写入文件
+						{
+							fwrite(WriteBuf,1,idx,fOut);
+							idx=0;
+							
+						}
+					}
+				}
+			}
+			//可能存在一个字节未写满，但ReadBuf中的信息已读完
+		}
+		if(count!=0)//当我们的一个字节未被写满，但所有信息已读完，将其也要保存到WriteBuf中---只有在所有信息全部读完
+		{
+			value<<=(8-count);//对于字节中剩下的位以0保存
+			WriteBuf[idx++]=value;
+		}
+
+		
+		//当WriteBuf未满时，但所有信息已读取结束，将其写入文件
+		if(idx!=0)
+			fwrite(WriteBuf,1,idx,fOut);
+
+		fclose(fIn);
+		delete[] ReadBuf;
+		delete[] WriteBuf;
+	}
+
+
+	//解压
+	void UnCompress(const string& OrgFilePath)
+	{
+		FILE* fIn=fopen(OrgFilePath.c_str(),"rb");//若以文本模式打开文件的话，可能会导致后续fread读取的时候误读EOF(0X1A--文本方式默认识别)，从而文件读不全
+		if(fIn==NULL)
+		{
+			cout<<"fIn open default"<<endl;
+			return ;
+		}
+
+		while(!feof(fIn))
+		{
+			string str;
+			GetLine(fIn,str,'\n');
+			if(str[0]=='d'&&str[1]==':')
+			{
+				size_t pos=str.find_first_of(':');
+				string dirname=str.substr(pos+1,str.size());
+				_mkdir(dirname.c_str());			
+			}
+			else
+			{
+				UnCompressFile(str,fIn);
+			}
+		}
+		
+		fclose(fIn);
+	}
+
+	//解压文件
+	void UnCompressFile(const string& OrgFilePath,FILE*& fIn)
+	{
+		//FILE* fIn=fopen(OrgFilePath.c_str(),"rb");//若以文本模式打开文件的话，可能会导致后续fread读取的时候误读EOF(0X1A--文本方式默认识别)，从而文件读不全
+		//if(fIn==NULL)
+		//{
+		//	cout<<"fIn open default"<<endl;
+		//	return ;
+		//}
+
+		//获取文件路径
+		//size_t pos=OrgFilePath.find_last_of('.');
+		//string FileName=OrgFilePath.substr(0,pos);
+		
+		//获取解压后文件后缀
+		//string FileSuffix;
+		//GetLine(fIn,FileSuffix,'\n');
+
+		//获取解压后文件路径
+		//string DstStrPath=FileName;
+		//DstStrPath+=FileSuffix;
+
+		FILE* fOut=fopen(OrgFilePath.c_str(),"wb");
+		if(fOut==NULL)
+		{
+			cout<<"fOut open default"<<endl;
+			return ;
+		}
+
+		//获取压缩信息在文件中的行数
+		string strline;
+		GetLine(fIn,strline,'\n');
+		int line=atoi(strline.c_str());
+
+		//获取压缩信息（即在压缩文件中的所有字符及其对应的出现次数）----用于构建huffman树
+		for(int i=0;i<line;i++)
+		{
+			string str;
+			GetLine(fIn,str,'\n');
+			int count=atoi(str.c_str()+2);
+			strcode[(unsigned char)str[0]]._StrCount=count;
+		}
+
+		//重新构建Huffman树----便于对之后的编码进行解码
+		//（从pRoot开始走，读到‘1’向右走，反之向左走，当走到根节点，即获取到一个对应字符）
+		HuffmanTree<StrCodeInfo> ht(strcode,256,StrCodeInfo(0));
+		Node<StrCodeInfo>* pRoot=ht.Root();
+		Node<StrCodeInfo>* pcur=pRoot;
+		char* ReadBuf=new char[BUFSIZE];//为提高效率，一次从文件中读取1024个字节（当然若字节数不足1024，则仅读取对应字符数的字符）
+		char* WriteBuf=new char[BUFSIZE];//同理ReadBuf
+		char value=0;
+		int bit=7;
+		int idx=0;
+		int count=0;
+		int num=0;
+		int ret=0;
+		int readnum=0;
+		int begin=ftell(fIn);
+		while(1)
+		{
+			readnum=0;
+			readnum=fread(ReadBuf,1,BUFSIZE,fIn);//1和1024位置最好不要换（让返回值刚好等于我们的读取字节数便于分析）
+			if(readnum==0)
+				break;
+
+			ret=readnum;
+			int i=0;
+			for(i=0;i<readnum;)
+			{
+				value=ReadBuf[i];
+				if(value&(1<<bit))//从value的最高位开始，若为1则向右走，反之向左走
+					pcur=pcur->_pRight;
+				else
+					pcur=pcur->_pLeft;
+
+				if(pcur->_pLeft==NULL&&pcur->_pRight==NULL)
+				{
+					WriteBuf[idx]=pcur->_weight._ch;
+					idx++;
+					if(idx==BUFSIZE)//当我们的WriteBuf满了之后，将其写入文件
+					{
+						count+=BUFSIZE;
+						fwrite(WriteBuf,1,idx,fOut);//
+						idx=0;
+					}
+					pcur=pRoot;
+					if(count+idx==pRoot->_weight._StrCount)//保证在最后一个字节中的无效信息不被读取
+						break;
+				}
+				bit--;
+				if(bit<0)//一个字节信息被读完
+				{
+					bit=7;
+					i++;
+					
+				}
+			}
+			//这里会遇到WriteBuf未满，但ReadBuf已读完，放在这里会误以为全部信息读完，
+			//从而将WriteBuf写入文件，但其实并未读完，循环依旧继续，此时上次写入的WriteBuf中的内容又要再被写入一次
+			num=i;
+		}
+
+		if(idx<BUFSIZE)//当WriteBuf未满时，但所有信息已经读完，则将WriteBuf内容写入文件---只有所有信息全部读完
+		{
+			fwrite(WriteBuf,1,idx,fOut);
+		}
+
+		int a=fseek(fIn,-(ret-num),SEEK_END);
+
+		char c=fgetc(fIn);
+		cout<<c<<endl;
+
+		fclose(fOut);
+		delete[] ReadBuf;
+		delete[] WriteBuf;
+	}
+
+
+
+private:
+	bool IsDir(const char path[])
+	{
+	    struct _finddata_t FileInfo;
+		_findfirst(path,&FileInfo);
+		
+		if(FileInfo.attrib & _A_SUBDIR)
+			return true;
+
+		return false;
+	}
+
+
+
+	void GetFiles(const string& OrgFilePath,vector<File>& v_file)
+	{
+		long filehandle;
+	    struct _finddata_t FileInfo;
+		string FilePath;
+		filehandle=_findfirst(FilePath.assign(OrgFilePath).append("\\*").c_str(),&FileInfo);
+		if(filehandle!=-1)
+		{
+			do
+			{
+				if(strcmp(FileInfo.name,".")&&strcmp(FileInfo.name,".."))
+				{
+					if(FileInfo.attrib & _A_SUBDIR)
+					{
+						v_file.push_back(File(FilePath,'d'));
+						GetFiles(FilePath.assign(OrgFilePath).append("\\").append(FileInfo.name).c_str(),v_file);
+					}
+					else
+					{
+						string path=OrgFilePath;
+						path.append("\\").append(FileInfo.name);
+						v_file.push_back(File(path));
+					}
+				}
+				
+			}while(_findnext(filehandle, &FileInfo)==0);
+
+			_findclose(filehandle);
+		}
+
+	}
+
+
+
+
+	//根据Huffman树获取对应字符编码，并进行保存
+	void _GetCode(Node<StrCodeInfo>* pRoot,StrCodeInfo strcode[],int size)
+	{
+
+		if(pRoot==NULL)
+			return ;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+		{
+			Node<StrCodeInfo>* pcur=pRoot;
+			Node<StrCodeInfo>* parent=NULL;
+			while(pcur->_parent)
+			{
+				Node<StrCodeInfo>* parent=pcur->_parent;
+				if(pcur==parent->_pLeft)
+					pRoot->_weight._StrCode+='0';
+				else
+					pRoot->_weight._StrCode+='1';
+				pcur=parent;
+			}
+
+			reverse(pRoot->_weight._StrCode.begin(),pRoot->_weight._StrCode.end());//进行字符串翻转（因为前面所获取编码刚好与我们需要的序列相反）
+			strcode[pRoot->_weight._ch]._StrCode=pRoot->_weight._StrCode;
+		}
+
+		_GetCode(pRoot->_pLeft,strcode,size);
+		_GetCode(pRoot->_pRight,strcode,size);
+	}
+
+
+	void GetLine(FILE*& fp,string& s,char c)
+	{
+		char ch=fgetc(fp);
+		s+=ch;
+		while((ch=fgetc(fp))!=c)
+		{
+			s+=ch;
+		}
+	}
+
+private:
+	StrCodeInfo strcode[256];
+};
