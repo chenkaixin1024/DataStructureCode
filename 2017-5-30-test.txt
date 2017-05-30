@@ -1,0 +1,335 @@
+#pragma once
+
+#include "Huffman.h"
+
+
+struct StrCodeInfo
+{
+	StrCodeInfo(int StrCount=0)
+		:_StrCount(StrCount)
+	{}
+
+	//重载各种运算符，便于在构建Huffman树的时候，对节点以字符出现次数进行比较
+	bool operator!=(const StrCodeInfo& sc)
+	{
+		return _StrCount!=sc._StrCount;
+	}
+
+	bool operator<(const StrCodeInfo& sc)
+	{
+		return _StrCount<sc._StrCount;
+	}
+
+	bool operator>(const StrCodeInfo& sc)
+	{
+		return _StrCount>sc._StrCount;
+	}
+
+	StrCodeInfo operator+(const StrCodeInfo& sc)
+	{
+		StrCodeInfo tmp;
+		tmp._StrCount=_StrCount+sc._StrCount;
+		return tmp._StrCount;
+	}
+
+	char _ch;
+	int _StrCount;
+	string _StrCode;
+};
+
+class FileCompress
+{
+public:
+	FileCompress()
+	{
+		for(size_t i=0;i<256;i++)
+		{
+			strcode[i]._ch=i;
+		}
+	}
+
+	//压缩文件
+	void CompressFile(const string& OrgFilePath)
+	{
+		FILE* fIn=fopen(OrgFilePath.c_str(),"r");
+		if(fIn==NULL)
+		{
+			cout<<"fIn open fault\n"<<endl;
+			return ;
+		}
+
+		char* ReadBuf=new char[1024];//为提高效率，一次从文件中读取1024个字符（当然若字符数不足1024，则仅读取对应字符数的字符）
+		while(1)
+		{
+			int readnum=fread(ReadBuf,1,1024,fIn);
+			if(readnum==0)
+				break;
+			for(int i=0;i<readnum;i++)
+			{
+				strcode[ReadBuf[i]]._StrCount++;//统计字符出现次数
+			}
+		}
+
+		HuffmanTree<StrCodeInfo> ht(strcode,256,StrCodeInfo(0));//构建Huffman树（以字符出现次数作为大小比较的依据）
+		Node<StrCodeInfo>* pRoot=ht.Root();
+		//获取对应编码
+		_GetCode(pRoot,strcode,sizeof(strcode)/sizeof(strcode[0]));
+		
+		//获取原文件路径
+		size_t pos=OrgFilePath.find_last_of('.');
+		string FileName=OrgFilePath.substr(0,pos);
+		//获取原文件后缀----作为压缩文件头部信息便于解压获取对应文件
+		string FileSuffix=OrgFilePath.substr(pos,OrgFilePath.size());
+		FileSuffix+='\n';
+		string DstFilePath=FileName;
+		DstFilePath+=".hzp";
+
+		FILE* fOut=fopen(DstFilePath.c_str(),"w");
+		if(fOut==NULL)
+		{
+			cout<<"fOut open default"<<endl;
+			return ;
+		}
+
+		fwrite(FileSuffix.c_str(),FileSuffix.size(),1,fOut);
+		
+		//获取压缩信息中出现的字符及其出现次数，以及总共的字符数（将其作为行数保存，来区分压缩信息与头部保存的额外信息）
+		int line=0;
+		string str;
+		for(size_t i=0;i<256;i++)
+		{
+			if(strcode[i]._StrCount)
+			{
+				str+=strcode[i]._ch;
+				str+=':';
+				char strcount[10];
+				itoa(strcode[i]._StrCount,strcount,10);
+				str+=strcount;
+				str+='\n';
+				line++;
+			}
+		}
+		
+		
+		string s;
+		char sline[10];
+		itoa(line,sline,10);
+		s+=sline;
+		s+='\n';
+		s+=str;
+		fwrite(s.c_str(),s.size(),1,fOut);
+
+
+		fseek(fIn,0,0);
+		char* WriteBuf=new char[1024];//同理ReadBuf
+		
+		char value=0;
+		size_t count=0;
+		size_t idx=0;
+		while(1)
+		{
+			int readnum=fread(ReadBuf,1,1024,fIn);
+			if(readnum==0)
+				break;
+			for(int i=0;i<readnum;i++)
+			{
+				string code=strcode[ReadBuf[i]]._StrCode;//查找对应字符编码
+				size_t index=0;
+				//用对应字符编码改写文件（按字节改写）
+				while(index<code.size())
+				{
+					//先将value左移，防止在一个字符编完码之后，在编下一个字符码时，对value信息进行覆盖（而左移的目的是因为先改写的编码是应该放在字节左边的）
+					value<<=1;
+					if(code[index++]=='1')
+						value|=1;
+					count++;
+					if(count==8)//在完成一个字节的编码之后，将其保存至WriteBuf
+					{
+						count=0;
+						WriteBuf[idx++]=value;
+						value=0;
+						if(idx==1024)//当WriteBuf写满后，将其写入文件
+						{
+							fwrite(WriteBuf,1,idx,fOut);
+							idx=0;
+							
+						}
+					}
+				}
+			}
+			if(count!=0)//当我们的一个字节未被写满，但所有信息已读完，将其也要保存到WriteBuf中，
+			{
+				value<<=(8-count);//对于字节中剩下的位以0保存
+				WriteBuf[idx++]=value;
+			}
+		}
+
+		//当WriteBuf未满时，但所有信息已读取结束，将其写入文件
+		if(idx!=0)
+			fwrite(WriteBuf,1,idx,fOut);
+
+		fclose(fIn);
+		fclose(fOut);
+		delete[] ReadBuf;
+		delete[] WriteBuf;
+	}
+
+
+	//解压文件
+	void UnCompressFile(const string& OrgFilePath)
+	{
+		FILE* fIn=fopen(OrgFilePath.c_str(),"r");
+		if(fIn==NULL)
+		{
+			cout<<"fIn open default"<<endl;
+			return ;
+		}
+
+		//获取文件路径
+		size_t pos=OrgFilePath.find_last_of('.');
+		string FileName=OrgFilePath.substr(0,pos);
+		
+		//获取解压后文件后缀
+		string FileSuffix;
+		char c;
+		while((c=fgetc(fIn))!='\n')
+		{
+			FileSuffix+=c;
+		}
+		FileSuffix+='\0';
+
+		//获取解压后文件路径
+		string DstStrPath=FileName;
+		DstStrPath+=FileSuffix;
+
+		FILE* fOut=fopen(DstStrPath.c_str(),"w");
+		if(fOut==NULL)
+		{
+			cout<<"fOut open default"<<endl;
+			return ;
+		}
+
+		//获取压缩信息在文件中的行数
+		string strline;
+		while((c=fgetc(fIn))!='\n')
+		{
+			strline+=c;
+		}
+		int line=atoi(strline.c_str());
+
+		//获取压缩信息（即在压缩文件中的所有字符及其对应的出现次数）----用于构建huffman树
+		for(int i=0;i<line;i++)
+		{
+			char ch;
+			c=fgetc(fIn);
+			while(c!=':')
+			{
+				strcode[c]._ch=c;
+				ch=c;
+				c=fgetc(fIn);
+			}
+			string str_count;
+			char c=fgetc(fIn);
+			while(c!='\n')
+			{
+				str_count+=c;
+				c=fgetc(fIn);
+			}
+			int count=atoi(str_count.c_str());
+			strcode[ch]._StrCount=count;
+		}
+
+		//重新构建Huffman树----便于对之后的编码进行解码（从pRoot开始走，读到‘1’向右走，反之向左走，当走到根节点，即获取到一个对应字符）
+		HuffmanTree<StrCodeInfo> ht(strcode,256,StrCodeInfo(0));
+		Node<StrCodeInfo>* pRoot=ht.Root();
+		Node<StrCodeInfo>* pcur=pRoot;
+		char* ReadBuf=new char[1024];//为提高效率，一次从文件中读取1024个字符（当然若字符数不足1024，则仅读取对应字符数的字符）
+		char* WriteBuf=new char[1024];//同理ReadBuf
+		while(1)
+		{
+			int readnum=fread(ReadBuf,1,1024,fIn);
+			if(readnum==0)
+				break;
+
+			char value=0;
+			int bit=7;
+			int idx=0;
+
+			for(int i=0;i<readnum;i)
+			{
+				value=ReadBuf[i];
+				if(value&(1<<bit))//从value的最高位开始，若为1则向右走，反之向左走
+					pcur=pcur->_pRight;
+				else
+					pcur=pcur->_pLeft;
+
+				if(pcur->_pLeft==NULL&&pcur->_pRight==NULL)
+				{
+					WriteBuf[idx++]=pcur->_weight._ch;
+					if(idx==1024)//当我们的WriteBuf满了之后，将其写入文件
+					{
+						idx=0;
+						fwrite(WriteBuf,1,idx,fOut);
+					}
+					pcur=pRoot;
+					if(idx==pRoot->_weight._StrCount)//保证在最后一个字节中的无效信息不被读取
+						break;
+				}
+				bit--;
+				if(bit<0)//一个字节信息被读完
+				{
+					bit=7;
+					i++;
+					
+				}
+			}
+
+			if(idx<1024)//当WriteBuf未满时，但所有信息已经读完，则将WriteBuf内容写入文件
+			{
+				fwrite(WriteBuf,1,idx,fOut);
+			}
+		}
+
+		fclose(fIn);
+		fclose(fOut);
+		delete[] ReadBuf;
+		delete[] WriteBuf;
+	}
+
+
+
+private:
+
+	//根据Huffman树获取对应字符编码，并进行保存
+	void _GetCode(Node<StrCodeInfo>* pRoot,StrCodeInfo strcode[],int size)
+	{
+
+		if(pRoot==NULL)
+			return ;
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+		{
+			Node<StrCodeInfo>* pcur=pRoot;
+			Node<StrCodeInfo>* parent=NULL;
+			while(pcur->_parent)
+			{
+				Node<StrCodeInfo>* parent=pcur->_parent;
+				if(pcur==parent->_pLeft)
+					pRoot->_weight._StrCode+='0';
+				else
+					pRoot->_weight._StrCode+='1';
+				pcur=parent;
+			}
+
+			reverse(pRoot->_weight._StrCode.begin(),pRoot->_weight._StrCode.end());//进行字符串翻转（因为前面所获取编码刚好与我们需要的序列相反）
+			strcode[pRoot->_weight._ch]._StrCode=pRoot->_weight._StrCode;
+		}
+
+		_GetCode(pRoot->_pLeft,strcode,size);
+		_GetCode(pRoot->_pRight,strcode,size);
+	}
+
+
+private:
+	StrCodeInfo strcode[256];
+};
