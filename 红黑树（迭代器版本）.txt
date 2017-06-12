@@ -1,0 +1,483 @@
+#pragma once
+
+#include <iostream>
+using namespace std;
+
+
+enum COLOR{RED,BALCK};
+
+template<class K,class V>
+struct Node
+{
+	Node(const K& key=K(),const V& value=V())
+		:_pLeft(NULL)
+		,_pRight(NULL)
+		,_parent(NULL)
+		,_color(RED)
+		,_key(key)
+		,_value(value)
+	{}
+
+	Node<K,V>* _pLeft;
+	Node<K,V>* _pRight;
+	Node<K,V>* _parent;
+	COLOR _color;
+	K _key;
+	V _value;
+};
+
+template<class K,class V,class Ref,class Ptr>
+class RBTreeIterator
+{
+	typedef Node<K,V> Node;
+	typedef RBTreeIterator<K,V,Ref,Ptr> Self;
+public:
+	RBTreeIterator()
+		:_pNode(NULL)
+	{}
+
+	RBTreeIterator(Node* pNode)
+		:_pNode(pNode)
+	{}
+
+	RBTreeIterator(const Self& it)
+	{
+		_pNode=it._pNode;
+	}
+
+	Self& operator++()
+	{
+		_Increase(_pNode);
+		return *this;
+	}
+
+	Self operator++(int)
+	{
+		Self tmp(*this);
+		_Increase(_pNode);
+		return tmp;
+	}
+
+
+	Self& operator--()
+	{
+		_Decrease(_pNode);
+		return *this;
+	}
+
+	Self operator--(int)
+	{
+		Self tmp(*this);
+		_Decrease(_pNode);
+		return tmp;
+	}
+
+	Ref operator*()
+	{
+		return _pNode->_key;
+	}
+
+	const Ref operator*()const 
+	{
+		return _pNode->_key;
+	}
+
+	Ptr operator->()
+	{
+		return &(_pNode->_key);
+	}
+	
+	const Ptr operator->()const
+	{
+		return &(_pNode->_key);
+	}
+
+	bool operator==(const Self& it)
+	{
+		return _pNode==it._pNode;
+	}
+
+	bool operator!=(const Self& it)
+	{
+		return _pNode!=it._pNode;
+	}
+
+private:
+	void _Increase(Node*& pNode)
+	{
+		if(pNode->_pRight)
+		{
+			pNode=pNode->_pRight;
+			while(pNode->_pLeft)
+			{
+				pNode=pNode->_pLeft;
+			}
+		}
+		else
+		{
+			Node* parent=pNode->_parent;
+			while(parent->_pRight==pNode)
+			{
+				pNode=parent;
+				parent=pNode->_parent;
+			}
+
+			if(pNode->_pRight!=parent)
+			{
+				pNode=parent;
+			}
+		}
+	}
+
+	void _Decrease(Node*& pNode)
+	{
+		if(pNode->_color==RED&&pNode->_parent->_parent=pNode)
+			pNode=pNode->_pRight;
+		else if(pNode->_pLeft)
+		{
+			pNode=pNode->_pLeft;
+			while(pNode->_pRight)
+			{
+				pNode=pNode->_pRight;
+			}
+		}
+		else
+		{
+			Node* parent=pNode->_parent;
+			while(parent->_pLeft==pNode)
+			{
+				pNode=parent;
+				parent=parent->_parent
+			}
+
+			pNode=parent;
+		}
+	}
+
+private:
+	Node* _pNode;
+};
+
+
+
+template<class K,class V>
+class RBTree
+{
+public:
+	typedef Node<K,V> Node;
+	typedef RBTreeIterator<K,V,K&,K*> Iterator;
+public:
+	RBTree()
+		:_size(0)
+	{
+		pHead=new Node;
+		pHead->_pLeft=pHead;
+		pHead->_pRight=pHead;
+	}
+
+
+	bool Insert(const K& key,const V& value)
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+		{
+			pRoot=new Node(key,value);
+			pRoot->_color=BALCK;
+			pRoot->_parent=pHead;
+			pHead->_parent=pRoot;
+			pHead->_pLeft=pRoot;
+			pHead->_pRight=pRoot;
+			_size++;
+			return true;
+		}
+
+		Node* pcur=pRoot;
+		Node* parent=NULL;
+		while(pcur)
+		{
+			if(key<pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pLeft;
+			}
+			else if(key>pcur->_key)
+			{
+				parent=pcur;
+				pcur=pcur->_pRight;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		pcur=new Node(key,value);
+		if(key<parent->_key)
+		{
+			parent->_pLeft=pcur;
+			pcur->_parent=parent;
+		}
+		else
+		{
+			parent->_pRight=pcur;
+			pcur->_parent=parent;
+		}
+
+		//pUncle---RED
+		//pUncle---BALCK
+		//pUncle---NULL
+
+		while(pcur!=GetRoot()&&parent->_color==RED)
+		{
+			Node* pGparent=parent->_parent;
+			Node* pUncle=NULL;
+			if(pGparent->_pLeft==parent)
+			{
+				pUncle=pGparent->_pRight;
+				if(pUncle&&pUncle->_color==RED)
+				{
+					pGparent->_color=RED;
+					parent->_color=BALCK;
+					pUncle->_color=BALCK;
+					pcur=pGparent;
+				}
+				else
+				{
+					if(pcur=parent->_pRight)
+					{
+						_RotateL(parent);
+						swap(parent,pcur);
+					}
+
+					_RotateR(pGparent);
+					swap(parent->_color,pGparent->_color);
+
+					break;
+				}
+			}
+			else
+			{
+				pUncle=pGparent->_pLeft;
+				if(pUncle&&pUncle->_color==RED)
+				{
+					pGparent->_color=RED;
+					parent->_color=BALCK;
+					pUncle->_color=BALCK;
+				}
+				else
+				{
+					if(pcur=parent->_pLeft)
+					{
+						_RotateR(parent);
+						swap(parent,pcur);
+					}
+
+					_RotateL(pGparent);
+					swap(parent->_color,pGparent->_color);
+
+					break;
+				}
+			}
+		}
+
+		pHead->_parent->_color=BALCK;
+		SetLeft();
+		SetRight();
+		
+		_size++;
+		return true;
+	}
+
+	Node* GetRoot()
+	{
+		return pHead->_parent;
+	}
+
+
+	void Inorder()
+	{
+		cout<<"Inoder: ";
+		Node* pRoot=GetRoot();
+		_Inorder(pRoot);
+		cout<<endl;
+	}
+
+	bool IsRBTree()
+	{
+		Node* pRoot=GetRoot();
+		if(pRoot==NULL)
+			return true;
+
+		if(pRoot->_color==RED)
+			return false;
+
+		Node* pcur=pRoot;
+		size_t BalckCount=0;
+		while(pcur)
+		{
+			if(pcur->_color==BALCK)
+			{
+				BalckCount++;
+			}
+			pcur=pcur->_pLeft;
+		}
+
+		return _CheckRBTree(pRoot,BalckCount,0);
+	}
+
+
+
+	Iterator Begin()
+	{
+		return Iterator(pHead->_pLeft);
+	}
+
+	Iterator End()
+	{
+		return Iterator(pHead);
+	}
+
+	bool Empty()const
+	{
+		return !(pHead->_parent);
+	}
+
+	size_t Size()const
+	{
+		return _size;
+	}
+
+	Iterator Find(const K& key)
+	{
+		Iterator it=Begin();
+		while(it!=End())
+		{
+			if(*it==key)
+			{
+				return it;
+			}
+			it++;
+		}
+
+		return Iterator();
+	}
+
+private:
+	void _RotateL(Node* parent)
+	{
+		Node* pSubR=parent->_pRight;
+		Node* pSubRL=pSubR->_pLeft;
+		Node* pparent=parent->_parent;
+
+		pSubR->_pLeft=parent;
+		parent->_parent=pSubR;
+
+		parent->_pRight=pSubRL;
+		if(pSubRL)
+			pSubRL->_parent=parent;
+
+		if(pparent==pHead)
+		{
+			pSubR->_parent=pHead;
+			pHead->_parent=pSubR;
+		}
+		else if(pparent->_pLeft==parent)
+		{
+			pparent->_pLeft=pSubR;
+			pSubR->_parent=pparent;
+		}
+		else
+		{
+			pparent->_pRight=pSubR;
+			pSubR->_parent=pparent;
+		}
+
+	}
+
+	void _RotateR(Node* parent)
+	{
+		Node* pSubL=parent->_pLeft;
+		Node* pSubLR=pSubL->_pRight;
+		Node* pparent=parent->_parent;
+
+		pSubL->_pRight=parent;
+		parent->_parent=pSubL;
+
+		if(pparent==pHead)
+		{
+			pHead->_parent=pSubL;
+			pSubL->_parent=pHead;
+		}
+		else if(pparent->_pLeft==parent)
+		{
+			pparent->_pLeft=pSubL;
+			pSubL->_parent=pparent;
+		}
+		else
+		{
+			pparent->_pRight=pSubL;
+			pSubL->_parent=pparent;
+		}
+
+		parent->_pLeft=pSubLR;
+		if(pSubLR)
+			pSubLR->_parent=parent;
+	}
+
+	void _Inorder(Node* pRoot)
+	{
+		if(pRoot)
+		{
+			_Inorder(pRoot->_pLeft);
+			cout<<pRoot->_key<<" ";
+			_Inorder(pRoot->_pRight);
+		}
+	}
+
+
+	bool _CheckRBTree(Node* pRoot, const size_t blackCount, size_t k)
+	{
+		if(pRoot==NULL)
+			return true;
+
+		if(pRoot->_color==BALCK)
+			k++;
+		else
+		{
+			if(pRoot->_parent&&pRoot->_parent->_color==RED)
+				return false;
+		}
+
+		if(pRoot->_pLeft==NULL&&pRoot->_pRight==NULL)
+		{
+			if(blackCount!=k)
+				return false;
+		}
+
+		return _CheckRBTree(pRoot->_pLeft,blackCount,k)&&_CheckRBTree(pRoot->_pRight,blackCount,k);
+	}
+
+	void SetLeft()
+	{
+		Node* pcur=GetRoot();
+		while(pcur->_pLeft)
+		{
+			pcur=pcur->_pLeft;
+		}
+		pHead->_pLeft=pcur;
+	}
+
+
+	void SetRight()
+	{
+		Node* pcur=GetRoot();
+		while(pcur->_pRight)
+		{
+			pcur=pcur->_pRight;
+		}
+		pHead->_pRight=pcur;
+	}
+private:
+	Node* pHead;
+	size_t _size;
+};
