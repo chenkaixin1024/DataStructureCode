@@ -1,0 +1,71 @@
+//int BinarySearch(int arr[],int size,int data)
+//{
+//	int left=0;
+//	int right=size;
+//
+//	//if(arr[0]>data)
+//	//	return 0;
+//
+//	//if(arr[size-1]<data)
+//	//	return size;
+//
+//
+//	//while(left<right)
+//	//{
+//	//	if(arr[mid]==data||(arr[mid]<data&&arr[mid+1]>data))
+//	//		return mid+1;
+//	//	else if(arr[mid]<data)
+//	//		left=mid+1;
+//	//	else
+//	//		right=mid;
+//	//}
+//
+//	while(left<right)
+//	{
+//		int mid=(left&right)+((left^right)>>1);
+//		if(arr[mid]>data)
+//			right=mid;
+//		else
+//			left=mid+1;
+//	}
+//
+//	return left;
+//}
+//
+//
+//void InsertSort(int arr[],int size)
+//{
+//	assert(arr);
+//	int i=1;
+//
+//	for(;i<size;i++)
+//	{
+//		int pos=BinarySearch(arr,i,arr[i]);
+//		int data=arr[i];
+//		int end=i;
+//		while(end>pos)
+//		{
+//			arr[end]=arr[end-1];
+//			end--;
+//		}
+//		arr[pos]=data;
+//	}
+//}
+//
+//
+//void funtest()
+//{
+//	int arr[] = {21, 25, 49, 25, 16, 8};
+//	InsertSort(arr,sizeof(arr)/sizeof(arr[0]));
+//	for(int i=0;i<sizeof(arr)/sizeof(arr[0]);i++)
+//	{
+//		cout<<arr[i]<<" ";
+//	}
+//	cout<<endl;
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
