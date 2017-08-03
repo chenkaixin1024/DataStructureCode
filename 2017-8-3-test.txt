@@ -1,0 +1,145 @@
+//¶ÑÅÅÐò
+//void adjust_down(int arr[],int size)
+//{
+//	int parent=0;
+//	int child=parent*2+1;
+//
+//	while(child<size)
+//	{
+//		if(child+1<size&&arr[child]<arr[child+1])
+//			swap(arr[child],arr[child+1]);
+//
+//		if(arr[child]<arr[parent])
+//			return ;
+//
+//		swap(arr[child],arr[parent]);
+//		parent=child;
+//		child=child*2+1;
+//	}
+//	
+//}
+//
+//void GetHeap(int arr[],int size)
+//{
+//	int start=(size-1)>>1;
+//
+//	while(start>=0)
+//	{
+//		int parent=start;
+//		int child=parent*2+1;
+//		while(child<size)
+//		{
+//			if(child+1<size&&arr[child]<arr[child+1])
+//				swap(arr[child],arr[child+1]);
+//
+//			if(arr[child]>arr[parent])
+//				swap(arr[child],arr[parent]);
+//
+//			parent=child;
+//			child=parent*2+1;
+//		}
+//		start--;
+//	}
+//}
+//
+//
+//void HeapSort(int arr[],int size)
+//{
+//	GetHeap(arr,size);
+//	
+//	while(size)
+//	{
+//		swap(arr[0],arr[size-1]);
+//		size--;
+//		adjust_down(arr,size);
+//	}
+//}
+//
+//void funtest()
+//{
+//	int arr[] = {10, 50, 32, 5, 76, 9, 40, 88};
+//	HeapSort(arr,sizeof(arr)/sizeof(arr[0]));
+//	for(int i=0;i<sizeof(arr)/sizeof(arr[0]);i++)
+//		cout<<arr[i]<<" ";
+//	cout<<endl;
+//
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+//#include <vector>
+//#include <string>
+//#include <map>
+//#include <queue>
+
+//void GetFavoriteFruit(const vector<string>& fruits,size_t k)
+//{
+//	map<string,int> m;
+//	int i=0;
+//	for(;i<fruits.size();i++)
+//	{
+//		m[fruits[i]]++;
+//	}
+//
+//	struct com
+//	{
+//		bool operator()(map<string,int>::iterator left,map<string,int>::iterator right)
+//		{
+//			return (*left).second<(*right).second;
+//		}
+//	};
+//	priority_queue<map<string,int>::iterator,vector<map<string,int>::iterator>,com> q;
+//
+//	map<string,int>::iterator it=m.begin();
+//	while(it!=m.end())
+//	{
+//		if(it->second)
+//		{
+//			q.push(it);
+//		}
+//		it++;
+//	}
+//
+//	while(!q.empty()&&k--)
+//	{
+//		cout<<q.top()->first<<" ";
+//		q.pop();
+//	}
+//
+//
+//}
+
+//void funtest()
+//{
+//	vector<string> V;
+//	V.push_back("Æ»¹û");
+//	V.push_back("Æ»¹û");
+//	V.push_back("Æ»¹û");
+//	V.push_back("Æ»¹û");
+//	V.push_back("Æ»¹û");
+//	V.push_back("Ïã½¶");
+//	V.push_back("Ïã½¶");
+//	V.push_back("Ïã½¶");
+//	V.push_back("Ïã½¶");
+//	V.push_back("Î÷¹Ï");
+//	V.push_back("Î÷¹Ï");
+//	V.push_back("Î÷¹Ï");
+//	V.push_back("ÆÏÌÑ");
+//	V.push_back("ÆÏÌÑ");
+//	V.push_back("¹þÃÜ¹Ï");
+//	V.push_back("²¤ÂÜ");
+//
+//
+//	GetFavoriteFruit(V,3);
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
