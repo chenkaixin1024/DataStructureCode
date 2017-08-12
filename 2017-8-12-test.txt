@@ -1,0 +1,131 @@
+//快速排序
+//int Partion1(int arr[],int left,int right)//挖坑法
+//{
+//	int k=arr[right];
+//	int begin=left;
+//	int end=right;
+//
+//	while(begin<end)
+//	{
+//		while(begin<end&&arr[begin]<k)
+//			begin++;
+//		arr[end]=arr[begin];
+//		while(begin<end&&arr[end]>k)
+//			end--;
+//		arr[begin]=arr[end];
+//	}
+//	arr[begin]=k;
+//
+//	return begin;
+//}
+//
+////双指针法
+//int Partion2(int arr[],int left,int right)
+//{
+//	int cur=left;
+//	int pre=left-1;
+//	int k=arr[right];
+//	while(cur<=right)
+//	{
+//		if(arr[cur]<=k&&++pre!=cur)
+//		{
+//			swap(arr[cur],arr[pre]);
+//		}
+//		cur++;
+//	}
+//	return pre;
+//}
+//
+//
+//void QuickSort(int arr[],int left,int right)
+//{
+//	if(left<right)
+//	{
+//		int div=Partion2(arr,left,right);
+//		QuickSort(arr,left,div-1);
+//		QuickSort(arr,div+1,right);
+//	}
+//}
+//
+//void funtest()
+//{
+//	int arr[]={2, 5, 4, 9, 3, 6, 8, 7, 1, 0};
+//	QuickSort(arr,0,sizeof(arr)/sizeof(arr[0])-1);
+//	for(int i=0;i<sizeof(arr)/sizeof(arr[0]);i++)
+//	{
+//		cout<<arr[i]<<" ";
+//	}
+//
+//	cout<<endl;
+//}
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
+
+
+
+//快速排序---非递归
+//
+//#include <stack>
+//
+//int Partion(int arr[],int left,int right)
+//{
+//	int cur=left;
+//	int pre=left-1;
+//	int k=arr[right];
+//	while(cur<=right)
+//	{
+//		if(arr[cur]<=k&&++pre!=cur)
+//		{
+//			swap(arr[cur],arr[pre]);
+//		}
+//		cur++;
+//	}
+//	return pre;
+//}
+//
+//void quicksort(int arr[],int left,int right)
+//{
+//	stack<int> s;
+//	s.push(left);
+//	s.push(right);
+//
+//	while(!s.empty())
+//	{
+//		right=s.top();
+//		s.pop();
+//		left=s.top();
+//		s.pop();
+//		if(left<right)
+//		{
+//			int div=Partion(arr,left,right);
+//			s.push(div+1);
+//			s.push(right);
+//			s.push(left);
+//			s.push(div-1);
+//		}
+//	}
+//}
+//
+//
+//void funtest()
+//{
+//	int arr[]={9, 0, 4, 2, 3, 6};
+//	quicksort(arr,0,sizeof(arr)/sizeof(arr[0])-1);
+//	for(int i=0;i<sizeof(arr)/sizeof(arr[0]);i++)
+//	{
+//		cout<<arr[i]<<" ";
+//	}
+//
+//	cout<<endl;
+//}
+//
+//
+//int main()
+//{
+//	funtest();
+//	return 0;
+//}
